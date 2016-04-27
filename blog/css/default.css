@@ -8,6 +8,8 @@ body {
     font-size: 16px;
     margin: 0px auto 0px auto;
     width: 800px;
+    font-family: Open Sans;
+    text-align: justify;
 }
 
 div#header {
@@ -36,6 +38,14 @@ div#subtitle a {
     font-style: italic;
     text-decoration: none;
     font-family: Cardo;
+}
+
+div#title {
+    color: black;
+    float: center;
+    font-size: 20px;
+    text-align: center;
+    text-decoration: none;
 }
 
 div#navbar {
