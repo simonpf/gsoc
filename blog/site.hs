@@ -1,9 +1,11 @@
---------------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings #-}
+--------------------------------------------------------------------------------
 import           Data.Monoid (mappend)
 import           Hakyll
 import           Hakyll.Core.Configuration
-
+import           Hakyll.Web.Pandoc.Biblio
+import           Text.Pandoc.Options
+import qualified Data.Set as S
 
 --------------------------------------------------------------------------------
 conf :: Configuration
@@ -15,8 +17,20 @@ conf = defaultConfiguration
   providerDirectory    = "./blog"
   }
 
+pandocMathCompiler =
+    let mathExtensions = [Ext_tex_math_dollars, Ext_tex_math_double_backslash,
+                          Ext_latex_macros]
+        defaultExtensions = writerExtensions defaultHakyllWriterOptions
+        newExtensions = foldr S.insert defaultExtensions mathExtensions
+        writerOptions = defaultHakyllWriterOptions {
+                          writerExtensions = newExtensions,
+                          writerHTMLMathMethod = MathJax ""
+                        }
+    in pandocCompilerWith defaultHakyllReaderOptions writerOptions
+
 main :: IO ()
 main = hakyllWith conf $ do
+
     match "images/*" $ do
         route   idRoute
         compile copyFileCompiler
@@ -25,11 +39,24 @@ main = hakyllWith conf $ do
         route   idRoute
         compile compressCssCompiler
 
-    match (fromList ["index.md", "about.md", "contact.md"]) $ do
+    match (fromList ["about.md", "contact.md"]) $ do
         route   $ setExtension "html"
-        compile $ pandocCompiler
+        compile $ pandocMathCompiler
             >>= loadAndApplyTemplate "templates/default.html" defaultContext
             >>= relativizeUrls
+
+    match (fromList ["index.md"]) $ do
+        route   $ setExtension "html"
+        compile $ do
+            posts <- recentFirst =<< loadAll "posts/*"
+            let archiveCtx =
+                    listField "posts" postCtx (return posts) `mappend`
+                    constField "title" "Archives"            `mappend`
+                    defaultContext
+            pandocMathCompiler
+                >>= loadAndApplyTemplate "templates/archive.html" archiveCtx
+                >>= loadAndApplyTemplate "templates/default.html" defaultContext
+                >>= relativizeUrls
 
     match "posts/*" $ do
         route $ setExtension "html"

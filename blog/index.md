@@ -2,4 +2,4 @@
 title: Index
 ---
 
-No posts yet.
+$partial("templates/post-list.html")$
