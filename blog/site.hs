@@ -23,8 +23,9 @@ pandocMathCompiler =
         defaultExtensions = writerExtensions defaultHakyllWriterOptions
         newExtensions = foldr S.insert defaultExtensions mathExtensions
         writerOptions = defaultHakyllWriterOptions {
-                          writerExtensions = newExtensions,
-                          writerHTMLMathMethod = MathJax ""
+                          writerExtensions     = newExtensions,
+                          writerHTMLMathMethod = MathJax "",
+                          writerHighlight      = True
                         }
     in pandocCompilerWith defaultHakyllReaderOptions writerOptions
 
