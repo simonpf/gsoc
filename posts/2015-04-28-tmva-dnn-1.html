@@ -66,6 +66,7 @@
                                                  outputFile,
                                                 <span class="st">&quot;AnalysisType=Classification&quot;</span> );</code></pre></div>
 <h3 id="preparing-the-data">Preparing the Data</h3>
+<p>The original Higgs-Higgs dataset is provided in <code>.csv</code> format. Since the set is very large we here use the dataset converted into <code>.root</code> format which is available from Omar Zapatas <a href="http://oproject.org/tiki-index.php?page=DeepLearning&amp;highlight=neural%20network">homepage</a>.</p>
 <p>First off, we create the data handles for input and output files and instantiate a <code>TMVA::Factory</code>, which will handle the training and evaluation of the network for us. Moreover, we create a <code>DataLoader</code> object which will provide the data to TMVA. The input file contains two trees, one containing the signal and the other containing the background events. We extract the trees, add the variables and the two trees to the <code>DataLoader</code> object.</p>
 <div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">    TTree *signal     = (TTree*)input-&gt;Get(<span class="st">&quot;TreeS&quot;</span>);
     TTree *background = (TTree*)input-&gt;Get(<span class="st">&quot;TreeB&quot;</span>);
