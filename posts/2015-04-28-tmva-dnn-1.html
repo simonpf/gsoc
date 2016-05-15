@@ -6,6 +6,7 @@
         <link href="https://fonts.googleapis.com/css?family=Cardo" rel="stylesheet" type="text/css">
         <title>Google Summer of Code - Project Blog</title>
         <link rel="stylesheet" type="text/css" href="../css/default.css" />
+        <link rel="stylesheet" type="text/css" href="../css/code.css" />
         <link href="https://fonts.googleapis.com/css?family=Open+Sans:300" rel="stylesheet" type="text/css">
     </head>
     <body>
@@ -35,10 +36,159 @@
     
 </div>
 
-<p>In order to get familiar with TMVA and to introduce the first benchmark dataset, in this post we will use TMVA to train a deep neural network on the Higgs-Higgs <a href="https://archive.ics.uci.edu/ml/datasets/HIGGS">dataset</a> as described in the <a href="http://arxiv.org/abs/1402.4735">paper</a> by Baldi, Sadowski and Whiteson.</p>
+<p>In order to get familiar with TMVA and introduce the first benchmark dataset, this post will demonstrate how TMVA can be used to train a deep neural network classifier on the Higgs-Higgs <a href="https://archive.ics.uci.edu/ml/datasets/HIGGS">dataset</a> as described in the <a href="http://arxiv.org/abs/1402.4735">paper</a> by Baldi, Sadowski and Whiteson.</p>
 <h2 id="the-data">The Data</h2>
-<p>The dataset consists of simulated events of two gluon into a Higgs boson. In the process <span class="math inline">(<em>g</em><em>g</em> → <em>H</em>)</span>, a heavy, electrically neutral Boson is formed, which decays into a heavy, electrically charged boson <span class="math inline"><em>H</em><sup>±</sup></span> and a <span class="math inline"><em>W</em></span> Boson. The electrically charged Higgs boson then decays into a second <span class="math inline"><em>W</em></span> boson and the light Higgs boson <span class="math inline"><em>h</em><sup>0</sup></span>.</p>
+<p>The Higgs-Higgs data set consists of simulated 8 TeV collisions from the LHC experiment. The classification task that we are dealing with here is to decide whether during the observed event an electrically-neutral Higgs boson was observed or not. The events of interest, i.e. where the creation of electrically-neutral Higgs boson was observed, are generally referred to as the <em>signal</em>, while the remaining, uninteresting events are referred to as the <em>background</em>.</p>
+<p>In the signal process <span class="math inline">(<em>g</em><em>g</em> → <em>H</em>)</span>, a heavy, electrically neutral Boson is formed, which decays into a heavy, electrically charged boson <span class="math inline"><em>H</em><sup>±</sup></span> and a <span class="math inline"><em>W</em></span> Boson. The electrically charged Higgs boson then decays into a second <span class="math inline"><em>W</em></span> boson and the light Higgs boson <span class="math inline"><em>h</em><sup>0</sup></span>.</p>
+<p>This process is overshadowed by a similar process in which two top quarks are formed, which then each decay to a bottom quark and a W boson.</p>
 <h2 id="getting-started-with-tmva">Getting Started With TMVA</h2>
+<p>TMVA is integrated into ROOT. The traditional way of using it is thus by writing an appropriate ROOT macro, which we will call <code>train_higgs()</code>:</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="ot">#include &quot;TFile.h&quot;</span>
+<span class="ot">#include &quot;TString.h&quot;</span>
+
+<span class="ot">#include &quot;TMVA/Factory.h&quot;</span>
+<span class="ot">#include &quot;TMVA/Tools.h&quot;</span>
+<span class="ot">#include &quot;TMVA/DataLoader.h&quot;</span>
+<span class="ot">#include &quot;TMVA/TMVAGui.h&quot;</span>
+
+<span class="dt">void</span> train_higgs( )
+{
+    TMVA::Tools::Instance();
+
+    TString infilename = <span class="st">&quot;higgs.root&quot;</span>;
+    TFile *input = TFile::Open(infilename);
+
+    TString outfilename = <span class="st">&quot;TMVA.root&quot;</span>;
+    TFile *output = TFile::Open(outfilename, <span class="st">&quot;RECREATE&quot;</span>);
+
+    TMVA::DataLoader *loader=<span class="kw">new</span> TMVA::DataLoader(<span class="st">&quot;higgs&quot;</span>);
+    TMVA::Factory *factory = <span class="kw">new</span> TMVA::Factory( <span class="st">&quot;TMVAClassification&quot;</span>,
+                                                 outputFile,
+                                                <span class="st">&quot;AnalysisType=Classification&quot;</span> );</code></pre></div>
+<h3 id="preparing-the-data">Preparing the Data</h3>
+<p>First off, we create the data handles for input and output files and instantiate a <code>TMVA::Factory</code>, which will handle the training and evaluation of the network for us. Moreover, we create a <code>DataLoader</code> object which will provide the data to TMVA. The input file contains two trees, one containing the signal and the other containing the background events. We extract the trees, add the variables and the two trees to the <code>DataLoader</code> object.</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">    TTree *signal     = (TTree*)input-&gt;Get(<span class="st">&quot;TreeS&quot;</span>);
+    TTree *background = (TTree*)input-&gt;Get(<span class="st">&quot;TreeB&quot;</span>);
+
+    loader-&gt;AddVariable(<span class="st">&quot;lepton_pT&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;lepton_eta&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;lepton_phi&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;missing_energy_magnitude&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;missing_energy_phi&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;jet_1_pt&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;jet_1_eta&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;jet_1_phi&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;jet_1_b_tag&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;jet_2_pt&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;jet_2_eta&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;jet_2_phi&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;jet_2_b_tag&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;jet_3_pt&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;jet_3_eta&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;jet_3_phi&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;jet_3_b_tag&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;jet_4_pt&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;jet_4_eta&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;jet_4_phi&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;jet_4_b_tag&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;m_jj&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;m_jjj&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;m_lv&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;m_jlv&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;m_bb&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;m_wbb&quot;</span>,<span class="st">'F'</span>);
+    loader-&gt;AddVariable(<span class="st">&quot;m_wwbb&quot;</span>,<span class="st">'F'</span>);
+
+    Double_t signalWeight = <span class="fl">1.0</span>;
+    Double_t backgroundWeight = <span class="fl">1.0</span>;
+    loader-&gt;AddSignalTree    (signal,     signalWeight);
+    loader-&gt;AddBackgroundTree(background, backgroundWeight);</code></pre></div>
+<p>Finally, we define the size of the training and test sets. Here, we only consider <span class="math inline">10<sup>5</sup></span> training events and <span class="math inline">10<sup>4</sup></span> test events in order to keep the time required to train the network on a common laptop machine at a reasonable level.</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">    TString dataString = <span class="st">&quot;nTrain_Signal=100000:&quot;</span>
+                         <span class="st">&quot;nTrain_Background=100000:&quot;</span>
+                         <span class="st">&quot;nTest_Signal=10000:&quot;</span>
+                         <span class="st">&quot;nTest_Background=10000:&quot;</span>
+                         <span class="st">&quot;SplitMode=Random:&quot;</span>
+                         <span class="st">&quot;NormMode=NumEvents:&quot;</span>
+                         <span class="st">&quot;!V&quot;</span>;
+
+    loader-&gt;PrepareTrainingAndTestTree(<span class="st">&quot;&quot;</span>, <span class="st">&quot;&quot;</span>, dataString);</code></pre></div>
+<h3 id="defining-the-network">Defining the Network</h3>
+<p>The network conifguration is passed to the DNN implementation through the <code>BookMethod</code> function using a configuration string to encode the parameters of the net. Different parameters are seperated by colons <code>:</code>.</p>
+<p>We start be setting the general TMVA parameters <code>H</code> and <code>V</code> in order to disable help output (<code>!H</code>) and enable logging of the training process (<code>V</code>):</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">    TString configString = <span class="st">&quot;!H:V&quot;</span>;</code></pre></div>
+<p>In addition to that, we add a variable transformation, that normalizes all input variables to zero mean and unit variance.</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">    configString += <span class="st">&quot;:VarTransform=N&quot;</span>;</code></pre></div>
+<h3 id="cost-funtion">Cost Funtion</h3>
+<p>Since we are dealing with a two-class classification, i.e. want to distinguish background events from signal events, the appropriate cost to minimize is the cross entropy over the training set.</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">    configString += <span class="st">&quot;:ErrorStrategy=CROSSETROPY&quot;</span>;</code></pre></div>
+<h3 id="weight-initialization">Weight Initialization</h3>
+<p>The initial weight values are chosen according to the <a href="http://jmlr.org/proceedings/papers/v9/glorot10a/glorot10a.pdf">Xavier Glorot &amp; Yoshua Bengio method</a></p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">    configString += <span class="st">&quot;:WeightInitialization=XAVIERUNIFORM&quot;</span>;</code></pre></div>
+<h3 id="network-topology">Network Topology</h3>
+<p>For the network topology, we choose a network consisting of three hidden layers with 100, 50 and 10 neurons, respectively. As activation function the $function is used for the hidden layers while the output is left linear. The corresponding configuration string takes the form</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">TString layoutString = <span class="st">&quot;Layout=TANH|100,TANH|50,TANH|10,LINEAR&quot;</span>;</code></pre></div>
+<h3 id="training-strategy">Training Strategy</h3>
+<p>We split the training up into three phases. The first one starts with a learning rate of <span class="math inline">10<sup>−1</sup></span> and a momentum of <span class="math inline">0.5</span>. In addition to that we add dropout with a fraction of <span class="math inline">0.5</span> for the second and third layer. To prevent overfitting we regularize the weights using L2 regularization multiplied by a weighting factor of <span class="math inline">10<sup>−3</sup></span>. The <code>Repetitions</code> option defines how often how often the net is trained on the same minibatch before switching it. The current performance of the net is evaluated every <code>TestRepetitions</code> steps on the test set. The <code>ConvergenceSteps</code> option defines howmany training steps must be performed without performance improvement before the net is declared to have converged.</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">    TString trainingString1 = <span class="st">&quot;TrainingStrategy=&quot;</span>
+                              <span class="st">&quot;LearningRate=1e-1,&quot;</span>
+                              <span class="st">&quot;Momentum=0.5,&quot;</span>
+                              <span class="st">&quot;Repetitions=1,&quot;</span>
+                              <span class="st">&quot;ConvergenceSteps=300,&quot;</span>
+                              <span class="st">&quot;BatchSize=20,&quot;</span>
+                              <span class="st">&quot;DropConfig=0.0+0.5+0.5+0.0,&quot;</span>  <span class="co">// Dropout</span>
+                              <span class="st">&quot;WeightDecay=0.001,&quot;</span>
+                              <span class="st">&quot;Regularization=L2,&quot;</span>
+                              <span class="st">&quot;TestRepetitions=15,&quot;</span>
+                              <span class="st">&quot;Multithreading=True&quot;</span>;</code></pre></div>
+<p>For the second training phase, we reduce the learning rate to <span class="math inline">10<sup>−2</sup></span>, set the momemtum to <span class="math inline">0.1</span> and reduce the dropout in the second and third layer to 0.1.</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">    TString trainingString2 = <span class="st">&quot;| LearningRate=1e-2,&quot;</span>
+                              <span class="st">&quot;Momentum=0.1,&quot;</span>
+                              <span class="st">&quot;Repetitions=1,&quot;</span>
+                              <span class="st">&quot;ConvergenceSteps=300,&quot;</span>
+                              <span class="st">&quot;BatchSize=20,&quot;</span>
+                              <span class="st">&quot;DropConfig=0.0+0.1+0.1+0.0,&quot;</span>  <span class="co">// Dropout</span>
+                              <span class="st">&quot;WeightDecay=0.001,&quot;</span>
+                              <span class="st">&quot;Regularization=L2,&quot;</span>
+                              <span class="st">&quot;TestRepetitions=15,&quot;</span>
+                              <span class="st">&quot;Multithreading=True&quot;</span>;</code></pre></div>
+<p>For the final training phase, we further reduce the learning rate by a factor of <span class="math inline">10</span> and set momentum and dropout probabilites to <span class="math inline">0</span>. In addition to that we increase the batch size to <span class="math inline">50</span>.</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">    TString trainingString3 = <span class="st">&quot;| LearningRate=1e-3&quot;</span>
+                              <span class="st">&quot;Momentum=0.0,&quot;</span>
+                              <span class="st">&quot;Repetitions=1,&quot;</span>
+                              <span class="st">&quot;ConvergenceSteps=300,&quot;</span>
+                              <span class="st">&quot;BatchSize=50,&quot;</span>
+                              <span class="st">&quot;WeightDecay=0.001,&quot;</span>
+                              <span class="st">&quot;Regularization=L2,&quot;</span>
+                              <span class="st">&quot;TestRepetitions=15,&quot;</span>
+                              <span class="st">&quot;Multithreading=True&quot;</span>;</code></pre></div>
+<p>So far, we have defined all necessary network parameters. Now we need to book the corresponding neural networks with the `TMVA::Factory’ object, which will take care of training and evaluations of the corresponding classifiers. In order to compare the effects of the different training schemes, we book three neural network classifiers: one executing only the first training phase, one executing the first and the second and another executing all training phases.</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp">    configString += <span class="st">&quot;:&quot;</span> + layoutString + <span class="st">&quot;:&quot;</span> + trainingString1;
+    factory-&gt;BookMethod(loader, TMVA::Types::kDNN, <span class="st">&quot;DNN 1&quot;</span>, configString);
+
+    configString += trainingString2;
+    factory-&gt;BookMethod(loader, TMVA::Types::kDNN, <span class="st">&quot;DNN 2&quot;</span>, configString);
+
+    configString += trainingString3;
+    factory-&gt;BookMethod(loader, TMVA::Types::kDNN, <span class="st">&quot;DNN 3&quot;</span>, configString);
+
+    factory-&gt;TrainAllMethods();
+    factory-&gt;TestAllMethods();
+    factory-&gt;EvaluateAllMethods();
+
+    output-&gt;Close();</code></pre></div>
+<h2 id="results">Results</h2>
+<p>The above code trains three identical neural networks with the three different training schemes given. The ROC curves of the resulting network are displayed below.</p>
+<div class="figure">
+<img src="../images/roc.png" alt="Figure 1: ROC Curves for the three different training schemes. No improvement in classification performance can be achieved through the additional training phases." />
+<p class="caption"><strong>Figure 1</strong>: ROC Curves for the three different training schemes. No improvement in classification performance can be achieved through the additional training phases.</p>
+</div>
+<p>Unfortunately no improvement in performance could be achieved from the additional training phases. It even seems that the additional training degrades the classifier performance. This seems to indicate that the reduction in dropout leads to overfitting of neural network.</p>
+<p>One difficulty in training the neural network is that the training currently takes a lot of time. As displayed in the figure below, for the three training phases the times required for the training on my laptop were <span class="math inline">8.1</span>, <span class="math inline">11.4</span> and <span class="math inline">18.8</span> hours, respectively. Which makes optimizing the network structure and training schemes very difficult.</p>
+<div class="figure">
+<img src="../images/times.png" alt="Figure 2: Training times required for the three training schemes described above." />
+<p class="caption"><strong>Figure 2</strong>: Training times required for the three training schemes described above.</p>
+</div>
 
         </div>
         <div id="footer">
