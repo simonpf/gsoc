@@ -33,11 +33,11 @@
 
           <div id="title"><h1>Deep Neural Networks in TMVA</h1></div>
             <div class="info">
-    Posted on April 28, 2015
+    Posted on April 28, 2016
     
 </div>
 
-<p>In order to get familiar with <a href="tmva.sourceforge.org">TMVA</a> and introduce the first benchmark dataset, this post will demonstrate how TMVA can be used to train a deep neural network classifier on the Higgs-Higgs <a href="https://archive.ics.uci.edu/ml/datasets/HIGGS">dataset</a> as described in the <a href="http://arxiv.org/abs/1402.4735">paper</a> by Baldi, Sadowski and Whiteson.</p>
+<p>In order to get familiar with TMVA and introduce the first benchmark dataset, this post will demonstrate how TMVA can be used to train a deep neural network classifier on the Higgs-Higgs <a href="https://archive.ics.uci.edu/ml/datasets/HIGGS">dataset</a> as described in the <a href="http://arxiv.org/abs/1402.4735">paper</a> by Baldi, Sadowski and Whiteson.</p>
 <h2 id="the-data">The Data</h2>
 <p>The Higgs-Higgs dataset consists of simulated 8 TeV collisions from the LHC experiment. The classification task that we are dealing with here is to decide whether during the observed event an electrically-neutral Higgs boson was observed or not. The events of interest, i.e. where the creation of electrically-neutral Higgs boson was observed, are referred to as the <em>signal</em>, while the remaining, uninteresting events are referred to as the <em>background</em>.</p>
 <p>In the signal process <span class="math inline">\((gg \rightarrow H)\)</span>, a heavy, electrically neutral Boson is formed, which decays into a heavy, electrically charged boson <span class="math inline">\(H^{\pm}\)</span> and a <span class="math inline">\(W\)</span> Boson. The electrically charged Higgs boson then decays into a second <span class="math inline">\(W\)</span> boson and a light Higgs boson <span class="math inline">\(h^0\)</span>.</p>

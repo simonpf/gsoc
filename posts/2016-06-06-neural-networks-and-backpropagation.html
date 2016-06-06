@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <link href="https://fonts.googleapis.com/css?family=Cardo" rel="stylesheet" type="text/css">
+        <title>Google Summer of Code - Project Blog</title>
+        <link rel="stylesheet" type="text/css" href="../css/default.css" />
+        <link rel="stylesheet" type="text/css" href="../css/code.css" />
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300" rel="stylesheet" type="text/css">
+    </head>
+    <body>
+        <div id="header">
+            <div id="logo">
+                <a>Google Summer of Code</a>
+            </div>
+            <div id="subtitle">
+                <a href="../">Project Blog</a>
+            </div>
+        </div>
+
+        <div id="navbar">
+            <div id="navigation">
+                <a href="../">Home</a>
+                <a href="../about.html">About</a>
+                <a href="../contact.html">Contact</a>
+                <a href="../archive.html">Archive</a>
+            </div>
+        </div>
+
+        <div id="content">
+
+          <div id="title"><h1>Deep Neural Networks and the Backpropagation Algorithm</h1></div>
+            <div class="info">
+    Posted on June  6, 2016
+    
+</div>
+
+<p>Two weeks have now passed since the beginning of the coding phase of the 2016 Google Summer of Code. In this blog post, I will present the main results of the first week working on my project <em>GPU-accelerated deep neural networks in TMVA</em>. The starting point of my project is a prototypical implementation of deep neural networks in <a href="tmva.sourceforge.org">TMVA</a>, which is included in the latest <a href="https://github.com/root-mirror">ROOT</a> version. The aim of my GSoC project is to extend this implementation so that neural networks can be trained more efficiently, in particular to realize GPU-accelerated training of deep neural networks.</p>
+<p>For the kick-off week of the project, I traveled to CERN to meet my supervisors Sergei V. Gleyzer and Lorenzo Moneta and the other members of the CERN SFT group. This was a great opportunity to discuss the project in detail as well getting opinions on the implementation from other ROOT developers.</p>
+<p>The first week was then mainly spent getting to know the current deep neural network implementation in depth and writing a detailed project plan that introduces a low-level interface for the offloading of the training to accelerator architectures. The main result of the first week is a detailed description of the neural network model and the operations involved in the training process, which will form the foundation for the implementation of accelerated deep neural networks.</p>
+<h2 id="the-neural-network-model">The Neural Network Model</h2>
+<p>For now, this implementation of neural networks is restricted to feed forward neural networks. In particular, we assume that the activations <span class="math inline">\(\mathbf{u}^l\)</span> of layer <span class="math inline">\(l\)</span> are given in terms of the activations of the previous layer by</p>
+<p><span class="math display">\[ \mathbf{u}^l = f^l \left ( \mathbf{W}^l\mathbf{u}^{l-1} + \boldsymbol{\theta}^l \right ) \]</span></p>
+<p>for a given weight matrix <span class="math inline">\(\mathbf{W}^l\)</span>, bias terms <span class="math inline">\(\boldsymbol{\theta}^l\)</span> and activation function <span class="math inline">\(f^l\)</span> of the current layer. For the training of neural networks, a loss function <span class="math inline">\(J(\mathbf{y},\mathbf{u}^{n_h})\)</span> is specified, which is minimized using gradient-based minimization techniques. The loss function <span class="math inline">\(J\)</span> quantifies the error of a neural network prediction <span class="math inline">\(\mathbf{u}^{n_h}\)</span>, i.e. the activations of the output layer, with respect to the truth <span class="math inline">\(\mathbf{y}\)</span>. In addition to that the loss function may also include regularization contributions from the parameters of the network. During training of the network, the gradients of <span class="math inline">\(J\)</span> with respect to the weights <span class="math inline">\(\mathbf{W}^l\)</span> and bias terms <span class="math inline">\(\mathbf{\theta}^l\)</span> of each layer are computed using the <a href="https://en.wikipedia.org/wiki/Backpropagation">backpropagation algorithm</a>. The forward and backward propagation of the training data through the neural network are the performance-critical operations which have to be performed during each iteration of the training of the neural network. In general, the computation of the gradients of the layer is performed using only a small fraction of the training data, a so called mini-batch of a given batch size. Both, the propagation of the neuron activations forward through the network as well as the backward propagation of the error through the network are inherently parallel. By considering the propagation of the training data from a full mini-batch through the network, it is possible to formulate the forward and backward propagation solely in terms of matrix operations, that can be performed very efficiently on massively parallel accelerator architectures. To this end, consider the training data of a mini-batch given by a two-dimensional tensor <span class="math inline">\(x_{i,j}\)</span> . For ease of notation, simplified <a href="https://en.wikipedia.org/wiki/Einstein_notation">Einstein notation</a> will be used in the following, meaning that repeated indices on the right-hand side of an equation imply summation over those indices, if they don’t appear on the left-hand side of the equation. The forward propagation of the activations corresponding to the input batch <span class="math inline">\(x_{i,j}\)</span> and the backward propagation of the corresponding gradients are described described in the following two sections.</p>
+<h2 id="forward-propagation">Forward Propagation</h2>
+<p>Since we are considering the propagation of the complete mini-batch through the neural network, the activations of a given layer <span class="math inline">\(l\)</span> can be represented by a two dimensional tensors <span class="math inline">\(u^l_{i,j}\)</span>, with the first index running over the neurons of the given layer and the second index running over the features of each sample. The activations of layer <span class="math inline">\(l\)</span> are then just given by</p>
+<p><span class="math display">\[ u^l_{i,j} = f^l\left ( W_{j,k} u^{l-1}_{i,k} + \theta_j \right ) \]</span></p>
+<p>For the forward propagation of the neuron activations, we thus need to compute the tensor product <span class="math inline">\(W_{j,k}u^{l-1}_{i,k}\)</span>, which can be implemented as a straight-forward matrix-matrix multiplication <span class="math inline">\(\mathbf{U}^{l-1}\mathbf{W}^T\)</span>. In the next step, the bias vectors <span class="math inline">\((\boldsymbol{\theta})_j=\theta_j\)</span> must be added row-wise to the result of the matrix product. Finally, the activation function <span class="math inline">\(f^l\)</span> of the layer must be applied element-wise to the resulting matrix. The involved computations are illustrated in the figure below.</p>
+<div class="figure">
+<img class="wide" src="../images/forward.png" alt="Figure 1: Forward propagation of the neuron activation through the neural network. bla blupp." width="90%/">
+<p class="caption">
+<strong>Figure 1</strong>: Forward propagation of the neuron activation through the neural network.
+</p>
+</div>
+<p>Propagating the input mini-batch <span class="math inline">\(x_{i,j}\)</span> forward through the neural network, yields the corresponding predictions of the neural network. Here we assume the output of the network to be given by the activations of the last hidden layer <span class="math inline">\(l_{n_h}\)</span> of the network. Depending on the task, these outputs may have to be transformed into a probability or a class prediction. For the training only the value of the loss function corresponding to the activations <span class="math inline">\(u_{i,j}^{l_h}\)</span> of the output layer and the true output <span class="math inline">\(y_{i,j}\)</span> is required.</p>
+<h2 id="backward-propagation">Backward Propagation</h2>
+<p>The aim of the neural network training is to find weights <span class="math inline">\(W_{i,j}^l\)</span> and bias values <span class="math inline">\(\theta^l_j\)</span> that minimize the cost function <span class="math inline">\(J(\mathbf{y}, \mathbf{u}^{l_h})\)</span>. To this end, we need to compute the gradients of <span class="math inline">\(J\)</span> with respect to the weights <span class="math inline">\(W^l_{i,j}\)</span> and bias terms <span class="math inline">\(\theta^l_j\)</span> of each layer. Formulas for the recursive computation of these gradients can be found by repeated application of the chain rule of calculus to the formulas for forward propagation given above:</p>
+<p><span class="math display">\[
+\begin{aligned}
+  \frac{dJ}{dW^l_{i,j}}      &amp;= u^{l-1}_{m,j} (f^l)'_{m,i} \frac{dJ}{du^l_{m,i}} + R(W^l_{i,j}) \label{eq:bp1} \\
+  \frac{dJ}{d\theta^l_{i}} &amp;= (f^l)'_{m,i} \frac{dJ}{du^l_{m,i}} \\
+  \frac{dJ}{du^{l-1}_{i,j}}  &amp;= W^l_{n,j}(f^l)'_{i,n} \frac{dJ}{du^l_{i,n}} \label{eq:bp2}
+\end{aligned}
+\]</span></p>
+<p>Here we use <span class="math inline">\((f^l)'_{i,n}\)</span> to denote the first derivatives of the activation function of the layer <span class="math inline">\(l\)</span> evaluated at <span class="math inline">\(t_{i,j} = W^l_{j,k}u_{i,k} + \theta_j\)</span>. The term <span class="math inline">\(R(W_{i,j}^l)\)</span> is used to represent potential contributions from regularization.</p>
+<p>To start the backpropagation the partial derivatives of the cost function <span class="math inline">\(J\)</span> with respect to the activations <span class="math inline">\(u_{i,j}^{n_h}\)</span> of the output layer are required. Then for each layer the following operations have to be performed:</p>
+<ul>
+<li><p><strong>Compute the weight gradients</strong> <span class="math inline">\(\frac{dJ}{dW^l_{i,j}}\)</span>: Multiply the matrix <span class="math inline">\((u^{l-1}_{i,j})^T\)</span> with the element-wise product of the derivatives <span class="math inline">\((f^l)'_{i,j}\)</span> of the activation function and the gradient of the loss function <span class="math inline">\(\frac{dJ}{du^{l}_{i,j}}\)</span> with respect to the activations of the current layer.</p></li>
+<li><p><strong>Compute the bias gradients</strong> <span class="math inline">\(\frac{dJ}{d\theta^l_{j}}\)</span>: Sum over the columns of the element-wise product of the derivatives <span class="math inline">\((f^l)'_{i,j}\)</span> of the activation function and the gradient of the loss function <span class="math inline">\(\frac{dJ}{du^{l}_{i,j}}\)</span> with respect to the activations of the current layer.</p></li>
+<li><p><strong>Compute the activation gradients <span class="math inline">\(\frac{dJ}{du^{l-1}_{i,j}}\)</span> of the previous layer</strong>: Multiply the weight matrix <span class="math inline">\(W^l_{i,j}\)</span> with the element-wise product of the derivatives <span class="math inline">\((f^l)'_{i,j}\)</span> of the activation function and the gradient of the loss function <span class="math inline">\(\frac{dJ}{du^{l}_{i,j}}\)</span> with respect to the activations of the current layer.</p></li>
+</ul>
+<p>The computations are illustrated once more in the figure below:</p>
+<div class="figure">
+<img class="wide" src="../images/backward.png" alt="Figure 2: Backward propagation of the error of the neural network prediction through the neural network." width="90%/">
+<p class="caption">
+<strong>Figure 2</strong>: Backward propagation of the error of the neural network predicting through the neural network.
+</p>
+</div>
+<h2 id="summary-and-outlook">Summary and Outlook</h2>
+<p>Above we have identified the mathematical structures and operations that are required for the training of neural networks. Moreover we have formulated the forward and backward propagation steps involved in the training of neural networks in terms of matrix operations, which can be very efficiently implemented on accelerator devices such as GPUs. The next step is now the specification of a low-level interface to separate the compute-intense mathematical operations, which will be performed on the accelerator device, from the coordination of the training, which will be performed on the host. This interface together with a prototype implementation will be described in my next blog post.</p>
+
+        </div>
+        <div id="footer">
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+        </div>
+    </body>
+</html>
