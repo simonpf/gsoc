@@ -140,11 +140,10 @@ for each layer the following operations have to be performed:
   $\frac{dJ}{du^{l}_{i,j}}$ with respect to the activations of the current layer.
 
 * **Compute the activation gradients $\frac{dJ}{du^{l-1}_{i,j}}$ of the
-previous layer**: Multiply the weight matrix $W^l_{i,j}$ with the
-element-wise product of the derivatives $(f^l)'_{i,j}$ of the
-activation function and the gradient of the loss function
-$\frac{dJ}{du^{l}_{i,j}}$ with respect to the activations of the current
-layer.
+previous layer**: Multiply the element-wise product of the derivatives
+$(f^l)'_{i,j}$ of the activation function and the gradient of the loss
+function $\frac{dJ}{du^{l}_{i,j}}$ with respect to the activations of
+the current layer with the weight matrix $W^l_{i,j}$.
 
 The computations are illustrated once more in the figure below:
 

@@ -1,0 +1,217 @@
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
+\documentclass[]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[upright]{fourier}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{matrix,arrows,decorations.pathmorphing}
+\begin{document}
+
+
+\centering
+\resizebox{\linewidth}{!}{%
+\begin{tikzpicture}[>=latex]
+% les matrices
+% \matrix (X) [matrix of math nodes,%
+%              left delimiter  = {[},%
+%              right delimiter = {]}] at (0, -1)
+% {%
+%   x_{0,0} & \ldots & x_{0,m}  \\
+%   x_{1,0} & \ldots & x_{1,m}  \\
+%    \vdots &        & \vdots   \\
+%   x_{n,0} & \ldots & x_{n,m}  \\
+% };
+
+%l1
+\draw[fill=black!20, draw=none] (3,2) rectangle (5,-4) {};
+\draw node[fill=blue!50, circle, width=2cm] (l1) at (4, 1) {$u^{0}_{i,j}$};
+\draw node[fill=green!50, circle, width=2cm] (W1) at (4, -1) {$W^{0}_{i,j}$};
+\draw node[fill=green!50, circle, width=2cm] (t1) at (4, -2.5) {$\theta^{0}_{i}$};
+
+% \draw [->,thick]%
+% ([xshift=0.4cm]X. east) to%
+% ([xshift=-0.2cm]l1.south west);
+
+\draw [->,thick]%
+([yshift=-0.1cm]l1.south) to%
+node[yshift = 0.2cm, above]{}%
+([yshift=0.1cm]W1.north);
+
+\draw [->, thick, out=225, in=135]%
+([yshift=-0.1cm]l1.south west) to%
+node[yshift = 0.2cm, above]{}%
+([yshift=0.1cm]t1.north west);
+
+
+%l2
+\draw[fill=black!20, draw=none] (7,2) rectangle (9,-4) {};
+\draw node[fill=blue!50, circle, width=2cm] (l2) at (8, 1) {$u^{1}_{i,j}$};
+\draw node[fill=green!50, circle, width=2cm] (W2) at (8, -1) {$W^{0}_{i,j}$};
+\draw node[fill=green!50, circle, width=2cm] (t2) at (8, -2.5) {$\theta^{0}_{i}$};
+
+\draw [->,thick]%
+([xshift=-0.2cm]l2.west) to
+([xshift=+0.2cm]l1. east);
+
+\draw [->,thick]%
+([yshift=0.-0.1cm]l2.south) to
+node[yshift = 0.2cm, above]{}%
+([yshift=0.1cm]W2.north);
+
+\draw [->, thick, out=225, in=135]%
+([yshift=-0.1cm]l2.south west) to
+([yshift=+0.1cm]t2.north west);
+
+%ld
+\draw node[draw=none, width=2cm] (ld) at (10.5, 1) {$\ldots$};
+\draw [->,thick]%
+([xshift=-0.2cm]ld.west) to
+([xshift=0.2cm]l2.east);
+
+%lnh
+%\draw node at (13,-5) {$u^{n_h}_{i,j} = f^1 \left (W^{n_h}_{j,k}u^{n_h}_{i,k} + \theta^{n_h}_j \right )$};
+%\draw node at (13,-5) {$\frac{dE}{du^{n_h}_{i,j}} = f^1 \left (W^{n_h}_{j,k}u^{n_h}_{i,k} + \theta^{n_h}_j \right )$};
+\draw node at (14,-6.05) {%
+$\begin{aligned}
+  & \\ \\
+  \frac{dE}{dW^{n_h}_{i,j}} & = u^{n_h}_{m,j} \left ( f^{n_h} \right )'_{m,i}\frac{dJ}{du^{n_h}_{m,i}} \\
+\frac{dE}{d\theta^{n_h}_{i}} & = \left (f^{n_h} \right )'_{m,i} \frac{dE}{du^{n_h}_{m,i}} \\
+\end{aligned}$};
+
+\draw[fill=black!20, draw=none] (12,2) rectangle (14,-4) {};
+\draw node[fill=blue!50, circle, width=2cm] (lnh) at (13, 1) {$\frac{dE}{du^{n_h}_{i,j}}$};
+\draw node[fill=green!50, circle, width=2cm] (Wnh) at (13, -1) {$\frac{dE}{dW^{n_h}_{j,j}}$};
+\draw node[fill=green!50, circle, width=2cm] (tnh) at (13, -2.5) {$\frac{dE}{d\theta^{n_h}_{j}}$};
+
+\draw node at (9,-6) {%
+$\begin{aligned}
+  \frac{dE}{du^{n}_{i,j}} & = W^{l}_{n,j} \left ( f^{n} \right )'_{i,n}\frac{dJ}{du^{n+1}_{i,n}} \\
+  \frac{dE}{dW^{n}_{i,j}} & = u^{n}_{m,j} \left ( f^{n} \right )'_{m,i}\frac{dJ}{du^{n}_{m,i}} \\
+\frac{dE}{d\theta^{n}_{i}} & = \left (f^{n} \right )'_{m,i} \frac{dE}{du^{n}_{m,i}} \\
+\end{aligned}$};
+
+\draw node at (3,-6) {%
+$\begin{aligned}
+  \frac{dE}{du^{n}_{i,j}} & = W^{l}_{n,j} \left ( f^{n} \right )'_{i,n}\frac{dJ}{du^{n+1}_{i,n}} \\
+  \frac{dE}{dW^{n}_{i,j}} & = u^{n}_{m,j} \left ( f^{n} \right )'_{m,i}\frac{dJ}{du^{n}_{m,i}} \\
+\frac{dE}{d\theta^{n}_{i}} & = \left (f^{n} \right )'_{m,i} \frac{dE}{du^{n}_{m,i}} \\
+\end{aligned}$};
+
+\draw [->,thick]%
+([xshift=-0.2cm]lnh.west) to
+([xshift=0.2cm]ld.east);
+
+\draw [->,thick]%
+([yshift=-0.1cm]lnh.south) to
+([yshift=0.1cm]Wnh.north);
+
+\draw [->, thick, out=225, in=135]%
+([yshift=-0.1cm]lnh.south west) to
+(tnh.north west);
+
+
+% \draw [->, thick]%
+% ([xshift=0.2cm]lnh.south east) to%
+% ([xshift=-0.4cm]Y.west);
+
+% \matrix (Y) [matrix of math nodes,%
+%              left delimiter  = {[},%
+%              right delimiter = {]}] at (16, -5)
+% {%
+% y_{0} \\
+% y_{1} \\
+% \vdots\\
+% y_{n} \\
+% };
+
+\draw node[fill=red!50, circle, width=2cm] (E) at (17, -1) {$E(\mathbf{y},\mathbf{\hat{y}},\mathbf{W})$};
+% Error function
+
+\draw [->, thick]%
+([xshift=-0.2cm]E.north west) to%
+([xshift=+0.2cm]lnh.south east);
+
+
+% \draw [->,thick, out=35,in=145,looseness=0.75]%
+% ([xshift=0.2cm, yshift=0.4cm]l1.north east) to%
+% node[yshift = 0.2cm, above]{$u^{1}_{i,j} = f^0\left(W^0_{i,k}u^0_{i,k} + \theta^{n_h-1}_i\right)$}%
+% ([xshift=-0.2cm, yshift=0.4cm]l2.north west);
+
+
+
+% \draw [->,thick, out=0,in=120,looseness=0.75]%
+% ([xshift=0.2cm, yshift=0.4cm]lnh. east) to%
+% node[yshift = 0.2cm, right]{$y_i = g\left(W^{l_{n_h}}_{0,k}u^{l_{n_h}}_{i,k} + \theta^{l_{n_h}} \right)$}%
+% \matrix (B) [matrix of math nodes,%
+%              left delimiter  = {[},%
+%              right delimiter = {]}] at (5, 0)
+% {%
+%   u^{l+1}_{0,0} & \ldots & u^{l+1}_{0,m}  \\
+%   u^{l+1}_{1,0} & \ldots & u^{l+1}_{1,m}  \\
+%    \vdots &        & \vdots   \\
+%   u^{l+1}_{n,0} & \ldots & u^{l+1}_{n,m}  \\
+% };
+
+% \matrix (dA) [matrix of math nodes,%
+%              left delimiter  = {[},%
+%              right delimiter = {]}] at (0, -4)
+% {%
+%   \frac{dy}{dW^l_{0,0}} & \ldots & \frac{dy}{dW^l_{0,m}}  \\
+%   \frac{dy}{dW^l_{1,0}} & \ldots & \frac{dy}{dW^l_{1,m}}  \\
+%    \vdots &        & \vdots   \\
+%   \frac{dy}{dW^l_{n,0}} & \ldots & \frac{dy}{dW^l_{n,m}}  \\
+% };
+
+% \matrix (dB) [matrix of math nodes,%
+%              left delimiter  = {[},%
+%              right delimiter = {]}] at (5, -4)
+% {%
+%   \frac{dy}{dW^{l+1}_{0,0}} & \ldots & \frac{dy}{dW^{l+1}_{0,m}}  \\
+%   \frac{dy}{dW^{l+1}_{1,0}} & \ldots & \frac{dy}{dW^{l+1}_{1,m}}  \\
+%    \vdots &        & \vdots   \\
+%   \frac{dy}{dW^{l+1}_{n,0}} & \ldots & \frac{dy}{dW^{l+1}_{n,m}}  \\
+% };
+
+% \matrix (C) [matrix of math nodes,%
+%              left delimiter  = {[},%
+%              right delimiter = {]}] at (10, 0)
+% {%
+%   u^2_{0,0} & \ldots & u^2_{0,m}  \\
+%   u^2_{1,0} & \ldots & u^2_{1,m}  \\
+%    \vdots &        & \vdots   \\
+%   u^2_{n,0} & \ldots & u^2_{n,m}  \\
+% };
+
+
+    % \draw [->,thick, out=-135,in=-45,looseness=0.75]%
+    % ([xshift=-0.4cm, yshift=-0.4cm]dB.south west) to
+    % node[yshift = 0.2cm, below]{$\frac{dy}{du^{l+1}_{i,j}} = f^{l+1}_i\left( W^{l+1}_{ik} u^l_{j,k} + \theta^{1+1}_i \right)$}%
+    % ([xshift=0.4cm, yshift=-0.4cm]dA.south east);
+
+  % l layer
+% \draw node[draw=black, circle, minwidth=2cm] (A) at (1, 0) {$u^{l}_{i,j}$};
+% \draw node[draw=black, circle, minwidth=2cm] (dAu) at (1, -3) {$\frac{dy}{du^{l}_{i,j}$};
+% \draw node[draw=black, circle, minwidth=2cm] (dAw) at (1, -5) {$\frac{dy}{dW^{l}_{i,j}$};
+% \draw node[draw=black, circle, minwidth=2cm] (dAt) at (1, -7) {$\frac{dy}{d\theta^l_{i}$};
+
+  % l+1 layer
+% \draw node[draw=black, circle, minwidth=2cm] (B) at (5, 0) {$u^{l+1}_{i,j}$};
+% \draw node[draw=black, circle, minwidth=2cm] (dBu) at (5, -3) {$\frac{dy}{du^{l+1}_{i,j}$};
+% \draw node[draw=black, circle, minwidth=2cm] (dBw) at (5, -5) {$\frac{dy}{dW^{l+1}_{i,j}$};
+% \draw node[draw=black, circle, minwidth=2cm] (dBt) at (5, -7) {$\frac{dy}{d\theta^{l+1}_{i}$};
+
+
+% \draw [->,thick, out=135,in=45,looseness=0.75]%
+% ([xshift=0.4cm, yshift=+0.4cm]dBu.north west) to%
+% node[above]{$\frac{dy}{du^{l}_{i,j}} = W^l_{i,k} \frac{df}{dx}\left(W^l_{i,m}u^l_{i,m}+\theta^l_i\right) \frac{dy}{du^{l+1}_{i,j}}$}
+% ([xshift=-0.4cm, yshift=+0.4cm]dAu.north east);
+\end{tikzpicture}
+}
+\end{document}
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

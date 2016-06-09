@@ -1,0 +1,28 @@
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
+
+\documentclass[tikz,convert={outfile=\jobname.svg}]{standalone}
+\usepackage{tikz_settings}
+\usepackage{tikz-uml}
+%\usetikzlibrary{...}% tikz package already loaded by 'tikz' option
+\begin{document}
+\begin{tikzpicture}% Example:
+  \tikzumlset{fill class = black!4}
+  \umlclass[template={Architecture},
+          x=-2, y=2]%
+           {TMVA::DNN::Layer}%
+           {using MatrixType = typename Architecture::MatrixType; \\ \\
+            void forward(); \\
+            void backward(); \\
+            Layer \& get\_next\_layer(); \\ \\
+            MatrixType \& get\_weights(); \\
+            MatrixType \& get\_input(); \\
+            MatrixType \& get\_output(); \\
+            MatrixType \& get\_linear\_output();\\}
+           {t\_size n; \\
+            ActivationFunction f;}
+\end{tikzpicture}
+\end{document}
