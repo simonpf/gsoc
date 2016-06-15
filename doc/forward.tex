@@ -60,7 +60,7 @@ node[yshift = 0.2cm, above]{}%
 ([xshift=-0.2cm]ld.west);
 
 %lnh
-\draw node at (13,2.5) {$u^{n_h}_{i,j} = f^1 \left (W^{n_h}_{j,k}u^{n_h}_{i,k} + \theta^{n_h}_j \right )$};
+\draw node at (13,2.5) {$u^{n_h}_{i,j} = f^{n_h} \left (W^{n_h}_{j,k}u^{n_h-1}_{i,k} + \theta^{n_h}_j \right )$};
 \draw[fill=black!20, draw=none] (12,2) rectangle (14,-4) {};
 \draw node[fill=blue!50, circle] (lnh) at (13, 1) {$u^{n_h}_{i,j}$};
 \draw node[fill=green!50, circle] (Wnh) at (13, -1) {$W^{n_h}_{i,j}$};

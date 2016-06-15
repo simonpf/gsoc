@@ -16,9 +16,9 @@
 
 %l1
 \draw[fill=black!20, draw=none] (3,2) rectangle (5,-4) {};
-\draw node[fill=blue!50, circle] (l1) at (4, 1) {$\frac{dJ}{du^{0}_{i,j}$};
-\draw node[fill=green!50, circle] (W1) at (4, -1) {$\frac{dJ}{dW^{0}_{i,j}}$};
-\draw node[fill=green!50, circle] (t1) at (4, -2.5) {$\frac{dJ}{d\theta^{0}_{i}}$};
+\draw node[fill=blue!50, circle] (l1) at (4, 1) {$\frac{dJ}{du^{1}_{i,j}$};
+\draw node[fill=green!50, circle] (W1) at (4, -1) {$\frac{dJ}{dW^{1}_{i,j}}$};
+\draw node[fill=green!50, circle] (t1) at (4, -2.5) {$\frac{dJ}{d\theta^{1}_{i}}$};
 
 % \draw [->,thick]%
 % ([xshift=0.4cm]X. east) to%
@@ -66,7 +66,7 @@ node[yshift = 0.2cm, above]{}%
 \draw node at (14,-6.05) {%
 $\begin{aligned}
   & \\ \\
-  \frac{dJ}{dW^{n_h}_{i,j}} & = u^{n_h}_{m,j} \left ( f^{n_h} \right )'_{m,i}\frac{dJ}{du^{n_h}_{m,i}} \\
+  \frac{dJ}{dW^{n_h}_{i,j}} & = u^{n_h-1}_{m,j} \left ( f^{n_h} \right )'_{m,i}\frac{dJ}{du^{n_h}_{m,i}} \\
 \frac{dJ}{d\theta^{n_h}_{i}} & = \left (f^{n_h} \right )'_{m,i} \frac{dJ}{du^{n_h}_{m,i}} \\
 \end{aligned}$};
 
@@ -77,16 +77,16 @@ $\begin{aligned}
 
 \draw node at (9,-6) {%
 $\begin{aligned}
-  \frac{dJ}{du^{n}_{i,j}} & = W^{l}_{n,j} \left ( f^{n} \right )'_{i,n}\frac{dJ}{du^{n+1}_{i,n}} \\
-  \frac{dJ}{dW^{n}_{i,j}} & = u^{n}_{m,j} \left ( f^{n} \right )'_{m,i}\frac{dJ}{du^{n}_{m,i}} \\
-\frac{dJ}{d\theta^{n}_{i}} & = \left (f^{n} \right )'_{m,i} \frac{dJ}{du^{n}_{m,i}} \\
+  \frac{dJ}{du^{2}_{i,j}} & = W^{3}_{j,k} \left ( f^{3} \right )'_{i,k}\frac{dJ}{du^{3}_{i,n}} \\
+  \frac{dJ}{dW^{2}_{i,j}} & = u^{1}_{m,k} \left ( f^{2} \right )'_{m,i}\frac{dJ}{du^{2}_{m,i}} \\
+\frac{dJ}{d\theta^{2}_{i}} & = \left (f^{2} \right )'_{m,i} \frac{dJ}{du^{2}_{m,i}} \\
 \end{aligned}$};
 
 \draw node at (3,-6) {%
 $\begin{aligned}
-  \frac{dJ}{du^{n}_{i,j}} & = W^{l}_{n,j} \left ( f^{n} \right )'_{i,n}\frac{dJ}{du^{n+1}_{i,n}} \\
-  \frac{dJ}{dW^{n}_{i,j}} & = u^{n}_{m,j} \left ( f^{n} \right )'_{m,i}\frac{dJ}{du^{n}_{m,i}} \\
-\frac{dJ}{d\theta^{n}_{i}} & = \left (f^{n} \right )'_{m,i} \frac{dJ}{du^{n}_{m,i}} \\
+  \frac{dJ}{du^{1}_{i,j}} & = W^{2}_{n,j} \left ( f^{2} \right )'_{i,n}\frac{dJ}{du^{2}_{i,n}}\\
+  \frac{dJ}{dW^{1}_{i,j}} & = x_{m,j} \left ( f^{1} \right )'_{m,i}\frac{dJ}{du^{1}_{m,i}} \\
+\frac{dJ}{d\theta^{1}_{i}} & = \left (f^{1} \right )'_{m,i} \frac{dJ}{du^{1}_{m,i}} \\
 \end{aligned}$};
 
 \draw [->,thick]%
