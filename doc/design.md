@@ -536,11 +536,12 @@ interface of the layer class is illustrated in the figure below.
 
 ### The `SharedLayer` Class
 
-The `SharedLayer` class is mostly identical to the `Layer` class except for that
-it does not have its own weight and bias matrices but only holds references to the weights
-of another layer. This is required in order to evaluate networks on different batch
-size, but also for the implementation of multithreaded training using *Hogwild!* [^1]
-style.
+The `SharedLayer` class is mostly identical to the `Layer` class
+except for that it does not have its own weight and bias matrices but
+only holds references to the weights of another layer. This is
+required in order to evaluate networks on different batch size, but
+also for the implementation of multithreaded training using *Hogwild!*
+[^1] style.
 
 [^1]: [https://people.eecs.berkeley.edu/~brecht/papers/hogwildTR.pdf](https://people.eecs.berkeley.edu/~brecht/papers/hogwildTR.pdf)
 
