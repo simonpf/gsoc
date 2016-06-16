@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <link href="https://fonts.googleapis.com/css?family=Cardo" rel="stylesheet" type="text/css">
+        <title>Google Summer of Code - Project Blog</title>
+        <link rel="stylesheet" type="text/css" href="../css/default.css" />
+        <link rel="stylesheet" type="text/css" href="../css/code.css" />
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300" rel="stylesheet" type="text/css">
+    </head>
+    <body>
+        <div id="header">
+            <div id="logo">
+                <a>Google Summer of Code</a>
+            </div>
+            <div id="subtitle">
+                <a href="../">Project Blog</a>
+            </div>
+        </div>
+
+        <div id="navbar">
+            <div id="navigation">
+                <a href="../">Home</a>
+                <a href="../about.html">About</a>
+                <a href="../contact.html">Contact</a>
+                <a href="../archive.html">Archive</a>
+            </div>
+        </div>
+
+        <div id="content">
+
+          <div id="title"><h1>A First Neural Network Prototype</h1></div>
+            <div class="info">
+    Posted on June 14, 2016
+    
+</div>
+
+<p>In this blog post I will describe the implementation of a first neural network prototype that I developed for my GSoC project. After a presentation of the forward and backward propagation algorithms for the training and evaluation of neural networks in my <a href="2016-06-06-neural-networks-and-backpropagation.html">previous blog post</a>, a first stand-alone neural network prototype has been developed that illustrates the general design for a multi-architecture implementation of neural networks and is used to verify the formulation of the fundamental algorithms that was developed in the previous post.</p>
+<h1 id="general-design">General Design</h1>
+<p>The aim of this project is to extend the current implementation of deep neural network in <a href="http://tmva.sourceforge.net/">TMVA</a> with functionality for GPU-accelrated training of deep neural networks. This will be achieved by introducing a <em>low-level interface</em> that separates the general algorithms for the training and evaluation of the neural network from the hardware-specific implementations of the underlying numerical operations. On top of the low-level interface sits a generic, object-oriented neural network model that coordinates the training and evaluation of the network. The low-level interface will be implemented by hardware-specific matrix data types that provide the functions required by the interace. The general structure of the implementation is illustrated in the diagram below.</p>
+<div class="figure">
+<img src="../images/components.png" alt="Figure 1: Structure of the neural network implementation." style="width: 300px;">
+<p class="caption">
+<strong>Figure 1</strong>: Structure of the neural network implementation.
+</p>
+</div>
+<h1 id="the-low-level-interface">The Low-Level Interface</h1>
+<p>In my <a href="2016-06-06-neural-networks-and-backpropagation.html">previous blog post</a> I presented a formulation of the forward and backward propagation algorithms in term of matrix operations. Based on this we can now identify the fundamental numerical operations that are required for the foward and backward propagation in oder to define the low-level interface. Note that the description of the low-level interface given below is only a very brief outline of the actual interface. The complete specification can be found <a href="insert%20link%20here!">here</a>.</p>
+<h2 id="forward-propagation">Forward Propagation</h2>
+<p>The fundamental operations required to compute the neuron activations <span class="math inline">\(\mathbf{u}^l\)</span> of a given layer <span class="math inline">\(l\)</span> from the activations of the previous layer <span class="math inline">\(l-1\)</span> are the following:</p>
+<ul>
+<li>Computation of the matrix product <span class="math inline">\(\mathbf{U}^{l-1} (\mathbf{W}^l)^T\)</span> of the matrix activations of the previous layer and the weight matrix of the current layer</li>
+<li>Row-wise addition of the bias vector <span class="math inline">\(\boldsymbol{\theta}^l\)</span></li>
+<li>Application of the activation function <span class="math inline">\(f^l\)</span> to each element of the resulting matrix</li>
+</ul>
+<p>In addition to that, we also need to evaluate the first derivatives of the activation function <span class="math inline">\(f^l\)</span> at <span class="math inline">\(\mathbf{U}^{l-1}(\mathbf{W}^l)^T + \boldsymbol{\theta}^l\)</span>, which are required in the backpropagation step.</p>
+<h2 id="backward-propagation">Backward Propagation</h2>
+<p>In a single step of the backpropagation algorithm the gradients of the loss function of the network with respect to the weights and bias variables of the current layer as well as the activations of the previous layer are computed. Since the computations involved here produce common intermediate results that can be reused during computation , we do not split up the computation but require the low-level implementation to provide a function that implements a complete backpropagation step for a given layer.</p>
+<h2 id="additional-operations">Additional Operations</h2>
+<p>In addition to the fundamental operations for forward and backward propagation, the training and evaluation of a neural network require further operations on the weight and activation matrices of each layer:</p>
+<ul>
+<li><strong>Loss function</strong>: Evaluation and computation of the gradients of the loss function of the network.</li>
+<li><strong>Output function</strong>: Computation of the nerual network prediction from the activations <span class="math inline">\(\mathbf{U}^{n_h}\)</span> of the last layer in the network.</li>
+<li><strong>Regularization</strong>: Evaluation of the contribution of regularization terms to the loss of the network and their contribution to the gradients of loss function with respect of the weights of each layer.</li>
+<li><strong>Addition and Scaling:</strong> For the updating of the weight matrices during training of the network it is necessary to add and scalte weight and gradient matrices.</li>
+</ul>
+<h1 id="the-neural-network-prototype">The Neural Network Prototype</h1>
+<p>Based on the low-level interface outlined above, a first neural network prototype consisting of a reference implementation of the low-level interface and a first object oriented neural network model has been developed.</p>
+<h2 id="implementation-model">Implementation Model</h2>
+<p>The current implementation model consists of two main class templates, a <code>Net</code> class template and a <code>Layer</code> class template. The <code>Net</code> class defines the network structure of the neural network through a vector of <code>Layer</code> objects. The layer class handles all the memory that is required during the execution of the forward and backward propagation steps. All class templates in the implementation take as type argument an <code>Architecture</code> type parameter that holds the data types used for the representation of scalars and matrices for a specific architecture. In addition to that, the <code>Net</code> class takes a <code>LayerType</code> type parameter that specifies the type of the layer used in the net. This is required to handle nets that hold their own weight matrices as well as nets that use the weights of another network. The general class structure of the object-oriented neural network model of the first prototype is given in the figure below.</p>
+<div class="figure">
+<img src="../images/classes.png" alt="Figure 2: Class structure of the neural network implementation.">
+<p class="caption">
+<strong>Figure 2</strong>: Class structure of the first neural network prototype.
+</p>
+</div>
+<h2 id="the-reference-architecture">The Reference Architecture</h2>
+<p>The reference architecture developed for the prototype uses ROOT’s <code>TMatrixT</code> generic matrix type to implement the low-level interface. Its purpose is of course only the verification of the neural network prototype and to serve as a reference for the development of optimized, architecture-dependent implementations of the low-level interface. The <code>Architecture</code> type template representing the reference architecture is given below.</p>
+<div class="sourceCode"><pre class="sourceCode cpp"><code class="sourceCode cpp"><span class="kw">template</span>&lt;<span class="kw">typename</span> Real&gt;
+<span class="kw">struct</span> Reference
+{
+<span class="kw">public</span>:
+    <span class="kw">using</span> RealType   = Real;
+    <span class="kw">using</span> MatrixType = TMatrixT&lt;Real&gt;;
+};</code></pre></div>
+<p>The complete implementation of the neural network prototype is <a href="https://github.com/simonpf/root/tree/master/tmva/tmva/inc/TMVA/DNN">available</a> on github in my fork of the ROOT repository.</p>
+<h1 id="testing">Testing</h1>
+<p>Since the formulation of the foward and backward propagation algorithms is quite complex, the implementation was thoroughly tested in order to ensure its correctness. One of the primary tests was the verification of the gradients computed using the backpropagation algorithm. This was done by comparing the gradients computed using backpropagation with gradients computed using numerical differentiation. Since this test covers both the forward and backward propagation through the network, it should make us quite confident about the correctness of the implementation if passed by the prototype.</p>
+For the testing the gradients of the loss function with respect to the weights and bias variables of randomly generated neural networks with up to four layers and a width of 20 neurons each have been computed using back propagation and numerical differentiation. The numerical derivatives were computed using a central difference quotient
+\begin{align}
+    f'(x) \approx \frac{f(x + \Delta x) - f(x - \Delta x)}{2\Delta x}
+\end{align}
+<p>For each such network, the maximum relative error in the gradients has been computed. One constraint here was that the activation functions of the neural network must be differentiable and therefore only linear and sigmoid activation functions were considered. For all tests presented below the mean squared error loss function was used.</p>
+<p>Slight problems were encountered here since the division by the width <span class="math inline">\(2\Delta x\)</span> of the difference interval leads to loss of precision. In order to investigate this, an additional test was performed using only the identity function as activation functions. Since the resulting neural network is a linear function of the input matrix, the loss function is quadratic and the central difference quotient is exact for all interval widths <span class="math inline">\(2\Delta x\)</span>. That means that the gradients in this case can be computed without the loss of precision resulting from the division by the width of the difference interval by choosing <span class="math inline">\(2\Delta x\)</span> to be the unit close to <span class="math inline">\(1\)</span>. The maximum relative errors of the weight gradients with respect to the half width of the difference interval <span class="math inline">\(\Delta x\)</span> are displayed in the plot below. As can be seen from the plot, for the linear net the relative error of the gradients lies within the range expected for double precision arithmetic. Also clearly visible is the increase in error with the depth of the network.</p>
+<div class="figure">
+<img src="../images/error_1.png" alt="Figure 3: Maximum relative error of the weight
+gradients computed using backpropagation and numerical derivation for a linear
+neural network.">
+<p class="caption">
+<strong>Figure 3</strong>:Maximum relative error of the weight gradients computed using backpropagation and numerical derivation for a linear neural network.
+</p>
+</div>
+<p>The testing results for a non-linear net with sigmoid activation functions is displayed in Figure 4 below. For a non-linear net, the finite difference interval used for the computation of the numerical error must be reduced in order to obtain a good approximation to the derivatives. However, the required division by the interval width amplifies the numerical error in the results and thus leads to a loss of precision. This can be clearly seen in the plot below, which displays the maximum relative error of the weight gradients with respect to the half width <span class="math inline">\(\Delta x\)</span> of the finite difference interval for increasing depths of the neural network. One can clearly identify two different error regimes in the plot: For finite difference intervals greater than <span class="math inline">\(\sim 10^{-4}\)</span>, the maximum relative error decreases with the interval width. In this region the approximation error of the difference quotient used for the numerical computation of the gradients is dominates the numerical error due to finite precision arithmetic. For <span class="math inline">\(\Delta x &lt; 10^{-4}\)</span>, the error increases again which is due to numerical error that is amplified due to the division by the interval width. This claim is supported by the behaviout of the numerical error for the linear net, which are displayed in the background of the plot.</p>
+<div class="figure">
+<img src="../images/error_2.png" alt="Figure 4: Maximum relative error of the weight
+gradients computed using backpropagation and numerical derivation for a non-linear
+neural network using Sigmoid activation functions. The curves in the background
+displayed the numerical error for the corresponding linear net.">
+<p class="caption">
+<strong>Figure 4</strong>: Maximum relative error of the weight gradients computed using backpropagation and numerical derivation for a non-linear neural network using Sigmoid activation functions. The curves in the background displayed the numerical error for the corresponding linear net.
+</div>
+<h1 id="summary-and-outlook">Summary and Outlook</h1>
+<p>In this blog post a first stand-alone prototype of a multi-architecture implementation of deep neural networks was presented and the implementations of forward and backward propagation verified by comparison of the computed gradients with numerically computed gradients. The next step is now the integration of the prototype into TMVA and to perform a first end-to-end test by training the network on the <a href="./2016-04-28-tmva-dnn-1.html">Higgs data set</a>.</p>
+
+        </div>
+        <div id="footer">
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+        </div>
+    </body>
+</html>
