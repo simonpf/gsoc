@@ -185,9 +185,9 @@ the `multiply_transpose` and the `add_row_wise` functions in the low-level
 interface.
 
 ```c++
-void multiply_transpose(&output,
-                        const MatrixType &input,
-                        const MatrixType &weights)
+void multiply_transpose(MatrixType &output,
+                            const MatrixType &input,
+                            const MatrixType &weights)
 
 void add_row_wise(MatrixType &output,
                   const MatrixType &biases)
