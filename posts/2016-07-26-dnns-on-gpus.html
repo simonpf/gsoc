@@ -3,6 +3,11 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
     <head>
         <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+        <script type="text/x-mathjax-config">
+          MathJax.Hub.Config({"HTML-CSS" : {scale : 75}})
+        </script>
+
         <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
         <link href="https://fonts.googleapis.com/css?family=Cardo" rel="stylesheet" type="text/css">
         <title>Google Summer of Code - Project Blog</title>
@@ -129,32 +134,32 @@ of the data streaming interface for the training of deep neural networks." style
 <thead>
 <tr class="header">
 <th align="center">No. of Training Samples</th>
-<th align="left">Time CPU</th>
-<th align="right">Epochs CPU</th>
-<th align="center">Time GPU</th>
+<th align="center">Time CPU [s]</th>
+<th align="center">Epochs CPU</th>
+<th align="center">Time GPU [s]</th>
 <th align="center">Epochs GPU</th>
 </tr>
 </thead>
 <tbody>
 <tr class="odd">
 <td align="center"><span class="math inline">\(5 \times 10^5\)</span></td>
-<td align="left"><span class="math inline">\(714 s\)</span></td>
-<td align="right">160</td>
-<td align="center"><span class="math inline">\(1280 s\)</span></td>
+<td align="center"><span class="math inline">\(714\)</span></td>
+<td align="center">160</td>
+<td align="center"><span class="math inline">\(1280\)</span></td>
 <td align="center">189</td>
 </tr>
 <tr class="even">
 <td align="center"><span class="math inline">\(1 \times 10^6\)</span></td>
-<td align="left"><span class="math inline">\(2280 s\)</span></td>
-<td align="right">295</td>
-<td align="center"><span class="math inline">\(3260 s\)</span></td>
+<td align="center"><span class="math inline">\(2280\)</span></td>
+<td align="center">295</td>
+<td align="center"><span class="math inline">\(3260\)</span></td>
 <td align="center">224</td>
 </tr>
 <tr class="odd">
 <td align="center"><span class="math inline">\(2 \times 10^6\)</span></td>
-<td align="left"><span class="math inline">\(4470 s\)</span></td>
-<td align="right">288</td>
-<td align="center"><span class="math inline">\(8103 s\)</span></td>
+<td align="center"><span class="math inline">\(4470\)</span></td>
+<td align="center">288</td>
+<td align="center"><span class="math inline">\(8103\)</span></td>
 <td align="center">182</td>
 </tr>
 </tbody>
