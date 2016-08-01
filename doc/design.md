@@ -6,18 +6,26 @@ date: 2016-06-14
 
 This report documents the implementation of deep neural networks in TMVA.
 After a brief description of the neural network model and the algorithms
-involved in the training and evaluation of such networks, the design of
+involved in the training and evaluation of these networks, the design of
 the implementation is outlined. The implementation currently consists of
 two abstraction layers, a low-level interface and an object oriented model
 neural network model. The low-level interface describes the numerically
 demanding tasks, that are critical for the performance of the implementation
-and will be optimized for optimal performance. The object-oriented neural
-network model will be used to implement the actual training of the network
-and will make use of the low-level interface.
+and will be optimized for the underlying computational architecture. The
+object-oriented neural network model will be used to implement the actual
+training of the network and will make use of the low-level interface.
+
+# Mathematical Notation
+
+Through this document, scalars will be written in regular, vectors in bold
+($\mathbf{u}$) and matrices in capital bold ($\mathbf{W}$). Superscripts
+denote layer indices, as in $\mathbf{u}^l$ for the activation vector
+of the $l$th layer and subscript indices denote tensor indices as in $W^l_{i,j}$
+for the weights of the $l$th layers in tensor representation.
 
 # The Neural Network Model
 
-For this implementation we restrict ourselves to feedforward neural
+For this specific implementation we restrict ourselves to feedforward neural
 networks, where the activations $\mathbf{u}^l \in \mathbb{R}^{n_l}$ of
 a layer $l$ are computed from the activations of the previous layer
 using
@@ -72,19 +80,45 @@ network.
 
 ## Neural Network Training
 
-Deep neural networks are trained by optimizing a loss function $J\left
-( \mathbf{y},\mathbf{u}^{l_h},\mathbf{W} \right )$ that quantifies the
-correctness of the network prediction corresponding to the activations
-of the output layer $\mathbf{u}^{l_h}$ with respect to the true values
-$\mathbf{y}$ and possibly also including regularization terms, which
-are functions of the weights $\mathbf{W}$ of the network. This
-objective function is then minimized by applying a gradient-based
-optimization technique, usually a modification of the gradient descent
-method. The key to scalable training of deep neural networks is the
-training on small, randomized subsets of the training data, so called
-*batches*. The gradient of the neural network loss $J$ is then computed for
-a single batch and used as an approximation to the true gradient over
-the whole training set to train the network.
+Our focus here lies on the training of neural networks, which can become very time
+consuming for large data sets. A neural network may be viewed as a function mapping
+a given input $\mathbf{x}$ onto a corresponding prediction $\hat{\mathbf{y}}$.
+
+\begin{align}
+\mathbf{x} \mapsto \hat{\mathbf{y}} \left (\mathbf{x}, \mathbf{W}, \boldsymbol{\theta} \right)
+\end{align}
+
+Apart form the architecture of the network, which we consider fixed, its output is
+defined by the *network parameters* $\mathbf{W}, \boldsymbol{\theta}$, which
+represent the weights and bias terms in each layer $l$ of the network. During
+the training process a loss function
+$J(\mathbf{\hat{Y}}\left(\mathbf{X}, W_{i,j}^l, \theta_{i,j}^l
+\right))$ is minimized with respect to the network parameters over a given
+training set consisting of input data
+$\mathbf{X}$ and corresponding expected predictions $\mathbf{Y}$.
+Note that the different notation for $\mathbf{x}$ and $\mathbf{X}$ as well as
+$\mathbf{\hat{y}}$ and $\mathbf{\hat{Y}}$ has been used to distinguish the single
+vector input and output ($\mathbf{x},\mathbf{\hat{y}}$) from the input and output
+over the complete training set ($\mathbf{X}, \mathbf{\hat{Y}}$).
+
+
+### Stochastic Gradient Descent
+
+Stochastic gradient descent (SGD) is the most basic training method for deep neural
+networks over large training sets. The key feature of *stochastic* gradient descent
+as opposed to standard gradient descent is that each training step is performed on
+a *mini batch* consisting only of a small number of samples from the training set.
+In each step, the gradients $\frac{dJ}{dW^l_{i,j}},\frac{dJ}{\theta^l_{i,j}}$
+of the loss function with respect to weight and bias terms of each layer are
+computed using backpropagation. The weights and biases are then updated according to
+
+\begin{align}
+  W^l_{i,j} \to W^l_{i,j} - \alpha \frac{dJ}{dW^l_{i,j}},
+  \theta^l_{i,j} \to \theta^l_{i,j} - \alpha \frac{dJ}{d\theta^l_{i,j}}
+\end{align}
+
+where $\alpha$ is the only parameter of the method, called the *learning rate*.
+
 
 ## Forward Propagation
 
@@ -93,7 +127,7 @@ whole batch through the network. The input can then be viewed as as
 two-dimensional tensor $x_{i,j}$ with the index $i$ running over the
 training samples in the batch and the index $j$ running over the
 features of each training sample. The neuron activations of each layer
-can then also be represented by two-dimensional tensors $u^l_{i,j}$,
+then also take the form of two-dimensional tensors $u^l_{i,j}$,
 with the index $i$ running over the training samples in the batch and
 the index $j$ running over the neurons in the given layer. We will
 refer to this tensor as the activation matrix of the given layer. The
@@ -146,8 +180,8 @@ figure.
 
 ![Backward propagation of activations through the network.](/home/simon/Documents/gsoc/blog/images/backward.png)
 
-The computation of the weight and bias gradients of a give layers thus
-require the following computations:
+The computation of the weight and bias gradients of a given layer thus
+requires the following computations:
 
 * Computation of the element-wise product of the derivatives of the
   activation function $(f^l_{i,j})'$ and the activation gradients of the
@@ -164,13 +198,56 @@ require the following computations:
   $\frac{dJ}{du^{l-1}_{i,j}}$ by computing the matrix product of the matrix
   $t^l_{i,j}$ and the weight matrix $W^l_{i,j}$ of the current layer.
 
+## Dropout
+
+Droput, as introduced by Srivastava and Hinton [^1] has proven as a very effective
+regularization technique that can significantly improve performance of deep neural
+networks. The idea behind dropout regularization is to randomly
+activate or deactivate the input activations to a given layer. The probability that
+an input activation $u^{l-1}_{i,j}$ to layer $l$ is active is given by a Bernoulli
+distribution with probability $p^l$. Since this effectively reduces the average input
+activation to the layer, the resulting input activations should be scaled by the
+factor $\frac{1}{p^l}$.
+
+Applying dropout to a given layer thus amounts transforming the input activations
+according to
+
+\begin{align}
+    \tilde{u}_{i,j}^{l-1} &= \frac{1}{p^l} r_{i,j}(p^l)\:u_{i,j}^{l-1} \\
+    r_{i,j}(p^l) &= \begin{cases} 1 & \text{, with probability } p^l \\
+                                  0 & \text{, with probability } 1 - l
+                    \end{cases}
+\end{align}
+
+
+
+[^1]: [https://people.eecs.berkeley.edu/~brecht/papers/hogwildTR.pdf](https://www.cs.toronto.edu/~hinton/absps/JMLRdropout.pdf)
+
 # Low-level Interface
 
-In this section the low-level interface is presented, which will
-separate the compute intensive, mathematical operations from the
+In this section the low-level interface is defined, which separates
+the compute intensive, mathematical operations from the
 general coordination of the training.
 
-## Forward Propagation
+The low-level interface is implemented by architecture classes, that provide
+an associated matrix type as well as the functions in the low-level interface
+as static members.
+
+```c++
+class Architecture
+{
+   // Declare matrix and scalar type used.
+   using Matrix_t = ...
+   using Scalar_t = ...
+   using DataLoader_t = ...
+
+   // Low-level function declarations.
+   ...
+};
+```
+
+## Propagation
+### Forward Propagation
 
 We split the forward propagation of the activations through a given layer into
 two steps. In the first step, the linear activations are computed using
@@ -181,158 +258,192 @@ two steps. In the first step, the linear activations are computed using
 
 Note that this is just the linear part of equation (3) but here written directly
 as a matrix product using matrix notation. These operations are implemented by
-the `multiply_transpose` and the `add_row_wise` functions in the low-level
+the `MultiplyTranspose` and the `AddRowWise` functions in the low-level
 interface.
 
 ```c++
-void multiply_transpose(MatrixType &output,
-                            const MatrixType &input,
-                            const MatrixType &weights)
+static void MultiplyTranspose(Matrix_t &output,
+                              const Matrix_t &input,
+                              const Matrix_t &weights)
+void AddRowWise(Matrix_t &output,
+                const Matrix_t &biases)
+```
+In the second step the activation functions are applied
+to the intermediate results produced in the first step. This is
+handled by the generic `evaluate` function, which calls the
+corresponding function of the low-level interface that implements
+the application of the function represented by the given `EActivationFunction`
+object to the given matrix. For more details on the representation of activation
+functions, see the section on activation functions below.
 
-void add_row_wise(MatrixType &output,
-                  const MatrixType &biases)
+
+```c++
+template<typename Architecture_t>
+inline void evaluate(typename Architecture_t::Matrix_t &A,
+                     EActivationFunction f)
+
 ```
 
-## Backward Propagation
+In addition to the neuron activations, also the first derivatives of the
+activation functions are computed during the forward propagation phase.
+Those are needed for the computation of the weight and bias gradients
+during backpropagation. This is handled by the `evaluateDerivative`
+function template, which similar to the `evaluate` function forwards the
+call for the given activation function to the corresponding function
+in the low-level interface.
 
-The backward propagation is implemented by a single method in the
-low-level interface. For a given layer $l$, this function takes the
+```c++
+template<typename Architecture_t>
+inline void evaluateDerivative(typename Architecture_t::Matrix_t & B,
+                               EActivationFunction f,
+                               const typename Architecture_t::Matrix_t & A)
+```
+
+### Backward Propagation
+
+Backward propagation is implemented by a single method in the
+low-level interface in order to provide more flexibility to the
+low-level implementation. For a given layer $l$, this function takes the
 gradients of the objective function with respect to the activations of
 the current layer (`activation_gradients`), the weights of the current
 layer (`weights`) and the activations of the $l-1$ layer, i.e. the
 previous layer (`activations_backward`). It also takes as input the first
-derivatives of the activation functions, which should ideally be
-computed during the forward propagation phase. From this the `backward`
+derivatives of the activation functions (`df`), which should for efficiency be
+computed during the forward propagation phase. From this the `Backward`
 method computes the gradients of the objective function with respect to the
-activations of the previous layer, the weights of the current layer as well as
-the biases of the current layer.
-
-Note that the formulas for backpropagation can be implemented using
-element-wise matrix multiplication as well as standard and transposed
-matrix-matrix multiplication.
+activations of the previous layer (`activation_gradients_backward`), the weights
+of the current layer (`weight_gradients`) as well as the biases (`bias_gradients`)
+of the current layer.
 
 ````c++
-template<typename MatrixType>
-void backward(MatrixType & activation_gradients_backward,
-                MatrixType & weight_gradients,
-                MatrixType & bias_gradients,
-                MatrixType & df,
-                const MatrixType & activation_gradients,
-                const MatrixType & weights,
-                const MatrixType & activations_backward,
-                Regularization r)
+static void Backward(Matrix_t & activation_gradients_backward,
+                     Matrix_t & weight_gradients,
+                     Matrix_t & bias_gradients,
+                     Matrix_t & df,
+                     const Matrix_t & activation_gradients,
+                     const Matrix_t & weights,
+                     const Matrix_t & activations_backward,
+                     Regularization r)
 ````
+The primitive operations in the backward propagation are hadamard product,
+matrix-matrix and transposed-matrix-matrix multiplication as well as a sum
+over the columns of a matrix.
 
-## Activation Functions
+## Matrix Functions
 
-The activation functions are represented by the `ActivationFunction` enum
+All remaining low-level functionality required to implement neural networks
+are functions or functionals acting on matrices. We group these functions
+according to their tasks in the neural net:
+
+- **Activation Functions**:  An activation or transfer function $f^l$ is applied to
+the linear combination of the input activations of a given layer $l$ in order to
+introduce non-linearities into the network.
+- **Loss Functions**: Loss functions are functionals which quantify the performance
+  of a neural network given the activation of the output layer and the true
+  classification or regression results, e.g. *mean squared error* or
+  *cross entropy*.
+- **Output Functions**: Output functions transform the activation of the output
+  layer in the network to a valid prediction, such as the *sigmoid transformation*
+  or *softmax*.
+- **Regularization**: Regularization functionals are applied to the weight matrices
+  in the network and the scaled result is added to the network loss. Examples are
+  L2 and L1 regularization.
+- **Initialization**: Functions to initialize the weight matrices before the training.
+
+The matrix functions are represented in the high-level implementation by enum types.
+To avoid the duplication of boilerplate code, generic evaluation functions are used
+in the high-level implementation that identify the correct function to be called from
+the low-level interface, which is matched to a concrete implementation by overloading
+on the corresponding matrix type.
+
+
+### Activation Functions
+
+The activation functions are represented by the `EActivationFunction` enum
 class.
 
 ````c++
-        /*! Enum that represents layer activation functions. */
-        enum class ActivationFunction
-        {
-            IDENTITY = 'I',
-            RELU     = 'R',
-            SIGMOID  = 'S'
-        };
+    /*! Enum that represents layer activation functions. */
+    enum class EActivationFunction
+    {
+        IDENTITY = 'I',
+        RELU     = 'R',
+        SIGMOID  = 'S'
+    };
 ````
 
-The evaluation of the activation functions is performed using the
-`evaluate` function template which forwards the call to the
-actual evaluation function corresponding to the given type of the
-activation function.
+The `evaluate` and `evaluateDerivative` function templates use a simple
+`switch` expression to forward the call to the corresponding static function of
+the corresponding architecture class. As naming convention we use the function
+with only the first letter capitalized, which is suffixed by `Derivative`
+for the computation of the first derivatives. As an example the signatures
+for the evaluation of the ReLU function and its first derivative are given below:
 
 ```c++
-// Apply the activation function f to the matrix A.
-template<typename MatrixType>
-inline void evaluate(MatrixType &A,
-                     ActivationFunction f)
+static void Relu(Matrix_t &A);
 
+static void ReluDerivative(Matrix_t &B, const Matrix_t &A);
 ```
 
-An architecture-specific implementation simply
-overloads the evaluation function for the architecture-specific
-matrix data type. As an example the signature for the evaluation of
-the ReLU function is given below:
+### Loss Functions
+
+For loss functions the approach is similar. They are again represented using
+an `enum` class:
 
 ```c++
-// Apply the ReLU functions to the elements in A.
-inline void relu(MatrixType &A);
-```
-
-In addition to the evaluation of the activation functions, also a function that
- computes the first order derivatives of the activation functions must be provided.
- The signature for the computation of the first order derivatives of the ReLU
- function is also given below.
-
-```c++
-// For each element in A evaluate the first derivative of the ReLU function
-// and write the result into B.
-inline void relu_derivative(MatrixType &B, const MatrixType &A);
-```
-
-## Loss Functions
-
-Similar to the activation functions, the loss functions are also represented by an
-enum class.
-
-```c++
-enum class LossFunction
+enum class ELossFunction
 {
     CROSSENTROPY     = 'C',
     MEANSQUAREDERROR = 'R'
 };
 ```
 
-The evaluation of the loss functions is implemented by the overloaded
-`evaluate` function, which computes the loss from a given activation
-matrix of the output layer of the network and the matrix $\mathbf{Y}$
-containing the true predictions. Similar to the implementation of
-activation functions, the generic `evaluate` function forwards the
-call to a given device-pecific evaluation function, that is overloaded
-with the device-specific matrix type.
+The difference with loss functions as opposed to the activation
+functions is that they require two input matrices: The activation of
+the output layer (`output`) in the net and the expected (true) training
+predicitons (`Y`). Also, their first derivative takes the form of a
+gradient. The high-level function templates for the evaluation of a
+loss function and the computation of its gradients are thus given by
 
 ```c++
-template<typename MatrixType>
-inline double evaluate(LossFunction f,
-                const MatrixType & Y,
-                const MatrixType & output)
+template<typename Matrix_t>
+inline double evaluate(ELossFunction f,
+                       const Matrix_t & Y,
+                       const Matrix_t & OutputActivations)
+
+template<typename Matrix_t>
+inline void evaluateGradients(Matrix_t & dY,
+                              ELossFunction f,
+                              const Matrix_t &Y,
+                              const Matrix_t &OutputActivations)
 ```
 
-In addition to that, we need to be able to compute the gradient of the loss
-function with respect to the activations of the output layer. This is
-implemented by the `evaluate_gradient` function, which also just forwards
-the call for a given loss function to the corresponding device-specific function.
 
-```
-template<typename MatrixType>
-inline void evaluate_gradient(MatrixType & dY,
-                        LossFunction f,
-                        const MatrixType &Y,
-                        const MatrixType &output)
-```
+For the functions in the low-level interface implementing specific loss functions,
+the same naming convention as for activation functions is adopted: The name of the
+function in lower case letters which is suffixed by `_gradients` for the computation
+of the gradients.
 
-The signature of a device-specific implementation of the that computes the
-mean squared error for a concrete matrix type `MatrixType` is given below:
 
 ```c++
-inline RealType mean_squared_error(const MatrixType &Y,
-                                   const MatrixType &output)
+static Scalar_t MeanSquaredError(const Matrix_t &Y,
+                                 const Matrix_t &output)
+static void MeanSquaredError(Matrix_t & dY,
+                             Matrix_t & Y,
+                             Matrix_t & output)
 ```
 
-## Output Functions
+### Output Functions
 
 The output function of a neural network defines how a prediction is
 obtained from the activations $u^{n_h}_{i,j}$ of the last layer in the
- network. Similar to the activation and loss function, they are
-represented by the `OutputFunction` enum class.
+ network. Similar to the activation and loss functions, they are
+represented by the `EOutputFunction` enum class.
 
 ```c++
-/*! Enum that represents output functions */
-enum class OutputFunction
+enum class EOutputFunction
 {
-    SIGMOID = 'S'
+    SIGMOID  = 'S'
 };
 ```
 
@@ -344,22 +455,18 @@ function for activations of the output layer `A` and writes the results into the
 matrix `B` is given below.
 
 ```c++
-// Apply the sigmoid function to the elements in A and write the
-// results into B.
-template<typename RealType>
-inline void sigmoid(MatrixType & B,
-                    const MatrixType & A)
+static void Sigmoid(Matrix_t & B,
+                    const Matrix_t & A)
 
 ```
 
-## Regularization
+### Regularization
 
 For the treatment of regularization, we proceed in a similar way as above. The type
 of the regularization is represented by an enum class
 
 ```c++
-/*! Enum representing the regularization type applied for a given layer */
-enum class Regularization
+enum class ERegularization
 {
     NONE = '0',
     L1   = '1',
@@ -373,9 +480,9 @@ method resolves the type of the regularization and forwards the call
 to the corresponding device specific method.
 
 ```c++
-template<typename MatrixType>
-    auto regularization(const MatrixType & A,
-                        Regularization R)
+template<typename Matrix_t>
+inline auto regularization(const Matrix_t & A,
+                           Regularization R)
     -> decltype(l1_regularization(A));
 ```
 
@@ -387,10 +494,10 @@ layer. This is implemented by the `add_regularization_gradient`
 method.
 
 ```c++
-template<typename MatrixType>
-    void add_regularization_gradient(MatrixType &A,
-                                     const MatrixType &W,
-                                     Regularization R)
+template<typename Matrix_t>
+inline void addRegularizationGradient(Matrix_t &A,
+                                      const Matrix_t &W,
+                                      Regularization R)
 ```
 
 The type signatures of the device specific functions that compute the L2
@@ -399,34 +506,34 @@ regularization term with respect to a given matrix to another matrix are
 given below.
 
 ```c++
-inline RealType l2_regularization(const MatrixType & W)
-inline void     add_l2_regularization_gradient(MatrixType & A,
-                                               MatrixType & W)
+static RealType L2Regularization(const Matrix_t & W)
+static void     AddL2RegularizationGradient(Matrix_t & A,
+                                            Matrix_t & W)
 ```
 
 And similarly for L1 regularization:
 
 ```c++
-inline RealType l1_regularization(const MatrixType & W)
-inline void     add_l1_regularization_gradient(MatrixType & A,
-                                               const MatrixType & W)
+inline RealType L1Regularization(const Matrix_t & W)
+inline void     AddL1RegularizationGradient(Matrix_t & A,
+                                            const Matrix_t & W)
 ```
 
-## Initialization
+### Initialization
 
 The initialization of the layers is treated in a similar way as the
-other functions above. An enum class specifies which type of
-initialization should be performed and the and a generic function then
-forwards the call to the `initialize` function to a device-specific
-implementation of the desired initialization method.
+other functions above. An enum class is used to represent the
+initialization methdo and a generic function then forwards the call to
+the `initialize` function to a device-specific implementation of the
+desired initialization method.
 
 ```c++
-/* Enum represnting the initialization method used for this layer. */
-enum class InitializationMethod
+enum class EInitializationMethod
 {
     GAUSS    = 'G',
     UNIFORM  = 'U',
-    IDENTITY = 'I'
+    IDENTITY = 'I',
+    ZERO     = 'Z'
 };
 ```
 
@@ -434,9 +541,79 @@ The function signatures for the device-specific initialization methods are given
 below:
 
 ```c++
-inline void initialize_gauss(MatrixType & A);
-inline void initialize_uniform(MatrixType & A);
-inline void initialize_identity(MatrixType & A);
+inline void InitializeGauss(Matrix_t & A);
+inline void InitializeUniform(Matrix_t & A);
+inline void InitializeIdentity(Matrix_t & A);
+```
+In addition to that a function is required that initializes the bias vector to
+zero:
+
+```c++
+inline void InitializeZero(Matrix_t & A);
+```
+
+### Dropout
+
+The dropout is performed by a single method in the low-level interface. This function
+takes the probability $p^l$ that a given activation is active and randomly activates
+or deactivates inputs to the layer and scales them by the reciprocal of the dropout
+probability.
+
+```c++
+static void Dropout(Matrix_t A, Real_t probability);
+```
+
+### Data Loaders
+
+Whith the functions defined above, the low-level interface provides all
+functionality required for the training of neural networks. However, for
+the training on accelerator additional factors must be considered. In general,
+accelerator devices have only a limited amount of on board memory that **cannot**
+be accessed directly from the host machine. The low-level interface must therefore
+provide sufficient flexibility for the backend implementations to manage their
+transfer to and from the device.
+
+To handle this, each implementation of the low-level interface must provide
+an associated data loader class that takes care of preparing the batches as input
+to the neural network for training and testing of the network.
+
+```c++
+class Architecture
+{
+   ...
+   using DataLoader_t = ...
+   ...
+};
+```
+
+Each data loader implementation should provide `begin()` and `end()` routines
+returning iterators to the first and the last batch in the current epoch. Using
+the batch iterator object, the training implementation can then loop over the
+batches to train the network. The dataloader should also take care of the
+shuffling of the data.
+
+```c++
+class DataLoader
+{
+   ...
+   BatchIterator begin();
+   BatchIterator end();
+   ...
+};
+```
+
+A single batch basically just groups together the matrix representation for the
+input samples and output classes for the neural net. Access to those should be
+provided by `GetInput()`, `GetOutput()` methods:
+
+```c++
+class DataLoader
+{
+   ...
+   BatchIterator begin();
+   BatchIterator end();
+   ...
+};
 ```
 
 # The Object-Oriented Neural Network Model
@@ -449,71 +626,77 @@ above.
 
 Independence of the implementation from the underlying hardware
 architecture is achieved through the use of template programming. Each
-of the classes in the implementation takes an `Architecture` template
-argument, which provides public types `RealType` and `MatrixType` that
-define the number type used for the representation of scalars as well
-as the type used for the representation of matrices.
+of the classes in the implementation takes an architecture class as
+template argument, which provides public `Real_t` and `Matrix_t` type
+aliases which define the types used for the representation of scalars and
+Matrices. In addition to that the each architecture class must
+provide static functions that implement the low-level interface described
+above.
 
-## Implementation Model
+## The Neural Network Model
 
-The implementation model consists of two main components: two classes
-representing layers of the network and a class representing the neural
-network, which consists of an arbitrary number of layers. Currently
-two different layer classes are available, the basic `Layer` class and
-the `SharedLayer` class for layers that share weight and bias
-matrices. Polymorphism with respect to the layer class is also
-achieved through the use of template programming. The general class
-structure is illustrated in the Figure below.
+The neural network implementation itself consists of two main components:
+The `TNet` and the `TLayer` class templates that represent a complete
+neural network containing a collection of layers and a single layer of such
+a network, respectively.
+In addition to the standard `TLayer` class there is also a `TSharedLayer` class
+that can also be used as a layer type for the `TNet` class. The difference between
+the `TLayer` and the `TSharedLayer` classes is that the `TSharedLayer` class only
+holds references to weight and bias matrices of another layer. This can be used
+for example to create a network with a different batch size for the evaluation
+on a validation or test set or to do multi-threaded training in hogwild style
+(see below).
 
 ![Class structure of the object-oriented neural network model](classes.png)
 
-### The `Net` Class
+### The `TNet` Class
 
 ```c++
-template<typename Architecture, typename LayerType>
-class Net;
+template<typename Architecture_t, typename Layer_t>
+class TNet;
 ```
 
-The `Net` class represents a concrete neural network through a `std::vector`
-of layers of type `LayerType`. In addition to that a `Net` object also holds the
-loss function `J` of the layer that is minimized during training and the type
-of regularization `R` that is applied to the network.
+The `TNet` class represents a concrete neural network through a `std::vector`
+of the layer type `Layer_t` provided as template argument. In addition
+to that a `TNet` object also holds the loss function `fJ` of the layer
+that is minimized during training and the type of regularization `fR`
+that is applied to the network.
 
 The neural network handles all memory that is required for the
 evaluation of the network and the computation of its gradients. Since
-this memory is dependend on the batch size of the input, a `Net`
+this memory is dependent on the batch size of the input, a particular `TNet`
 object has a specific, associated batch size, which is represented by
-the member variable `batch_size`. An identical network for a different
+the member variable `fBatchSize`. An identical network for a different
 batch size can be created using the clone method (see below). The
 number of features of an input event is represented by the
-`input_widht` member variable, as it corresponds to the width of an
+`inputWidth` member variable, as it corresponds to the width of an
 additional *input layer* of the network.
 The general class interface is illustrated in the figure below.
 
 ![Interface of the `Net` class](class_net.png)
 
-The interface provided by the `Net` class should be mostly self-explanatory.
+The interface provided by the `TNet` class should be mostly self-explanatory.
 A detailed description of each function can be found in the source code or
 the corresponding doxygen documentation.
 
 #### Caveats
 
-
 Currently the implementation of the backpropagation modifies temporary values that
-are computed during the forward propagation. The call to the `backward(...)` function
-must therefore occur directly after the corresponding call to the `forward(...)`
+are computed during the forward propagation. The call to the `Backward(...)` function
+must therefore occur directly after the corresponding call to the `Forward(...)`
 method.
 
-### The `Layer` Class
+### The `TLayer` Class
 
 The layer class represents a basic layer of the network and manages the memory
 required for the foward propagation of activation and backward propagation
-of gradients through the network. Each layer has a given width $n_l$, which is the
-number of neurons in this layer, and an activation function `f`.
+of gradients through this given layer. Each layer has as attributes a given width
+$n_l$ (`fWidth`), which is the number of neurons in this layer, and an activation
+function `f` (`fF`).
 
 On creation, each layer allocates memory for all matrices that have to be
 computed during the forward and backward propagation steps to hold neuron
-activations, gradients and temporary values. For given batch size $n_b$
+activations, gradients and temporary values. For a given batch size $n_b$
 those are:
 
 * The $n_l \times n_{l-1}$ weight matrix `weights`
@@ -528,21 +711,27 @@ those are:
 * The $n_l \times 1$ matrix containing the gradients of loss function with respect
   to the bias values of this layer.
 
-The `Layer` class provides the `forward` and `backward` methods that propagate
-neuron activations forward and gradients backward through the layer. The general
-interface of the layer class is illustrated in the figure below.
+The `TLayer` class provides the `Forward` and `Backward` member functions that
+propagate neuron activations forward and gradients backward through
+the layer. The general interface of the layer class is illustrated in
+the figure below.
 
-![Interface of the `Layer` class](class_layer.png)
+![Structure of the `TLayer` class](class_layer.png)
 
 ### The `SharedLayer` Class
 
-The `SharedLayer` class is mostly identical to the `Layer` class
+The `TSharedLayer` class is mostly identical to the `TLayer` class
 except for that it does not have its own weight and bias matrices but
 only holds references to the weights of another layer. This is
 required in order to evaluate networks on different batch size, but
 also for the implementation of multithreaded training using *Hogwild!*
-[^1] style.
+[^2] style.
 
-[^1]: [https://people.eecs.berkeley.edu/~brecht/papers/hogwildTR.pdf](https://people.eecs.berkeley.edu/~brecht/papers/hogwildTR.pdf)
+[^2]: [https://people.eecs.berkeley.edu/~brecht/papers/hogwildTR.pdf](https://people.eecs.berkeley.edu/~brecht/papers/hogwildTR.pdf)
 
+# Profiling
 
+In order to obtain a realistic analysis of the performance of the different
+implementations, we also define a general profiling interface for the methods
+in the backend. This will, in addition to architecture specific profiling,
+provide a convenient way of comparing the different backends.

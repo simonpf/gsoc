@@ -18,7 +18,7 @@ conf = defaultConfiguration
   }
 
 pandocMathCompiler =
-    let mathExtensions = [Ext_latex_macros, Ext_raw_html]
+    let mathExtensions = [Ext_latex_macros, Ext_raw_html, Ext_pipe_tables]
         defaultExtensions = writerExtensions defaultHakyllWriterOptions
         newExtensions = foldr S.insert defaultExtensions mathExtensions
         writerOptions = defaultHakyllWriterOptions {

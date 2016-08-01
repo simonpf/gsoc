@@ -37,9 +37,9 @@ node[yshift = 0.2cm, above]{}%
 
 %l2
 \draw[fill=black!20, draw=none] (7,2) rectangle (9,-4) {};
-\draw node[fill=blue!50, circle] (l2) at (8, 1) {$\frac{dJ}{du^{1}_{i,j}}$};
-\draw node[fill=green!50, circle] (W2) at (8, -1) {$\frac{dJ}{dW^{0}_{i,j}}$};
-\draw node[fill=green!50, circle] (t2) at (8, -2.5) {$\frac{dJ}{d\theta^{0}_{i}}$};
+\draw node[fill=blue!50, circle] (l2) at (8, 1) {$\frac{dJ}{du^{2}_{i,j}}$};
+\draw node[fill=green!50, circle] (W2) at (8, -1) {$\frac{dJ}{dW^{2}_{i,j}}$};
+\draw node[fill=green!50, circle] (t2) at (8, -2.5) {$\frac{dJ}{d\theta^{2}_{i}}$};
 
 \draw [->,thick]%
 ([xshift=-0.2cm]l2.west) to
@@ -65,7 +65,7 @@ node[yshift = 0.2cm, above]{}%
 %\draw node at (13,-5) {$\frac{dJ}{du^{n_h}_{i,j}} = f^1 \left (W^{n_h}_{j,k}u^{n_h}_{i,k} + \theta^{n_h}_j \right )$};
 \draw node at (14,-6.05) {%
 $\begin{aligned}
-  & \\ \\
+  \frac{dJ}{du^{n_h}_{i,j}} &\\
   \frac{dJ}{dW^{n_h}_{i,j}} & = u^{n_h-1}_{m,j} \left ( f^{n_h} \right )'_{m,i}\frac{dJ}{du^{n_h}_{m,i}} \\
 \frac{dJ}{d\theta^{n_h}_{i}} & = \left (f^{n_h} \right )'_{m,i} \frac{dJ}{du^{n_h}_{m,i}} \\
 \end{aligned}$};

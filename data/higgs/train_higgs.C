@@ -62,8 +62,8 @@ void train_higgs( )
     loader->AddSignalTree    (signal,     signalWeight);
     loader->AddBackgroundTree(background, backgroundWeight);
 
-    TString dataString = "nTrain_Signal=100000:"
-                         "nTrain_Background=100000:"
+    TString dataString = "nTrain_Signal=1000000:"
+                         "nTrain_Background=1000000:"
                          "nTest_Signal=1000:"
                          "nTest_Background=1000:"
                          "SplitMode=Random:"
@@ -83,7 +83,7 @@ void train_higgs( )
     configString += ":WeightInitialization=XAVIERUNIFORM";
 
     // Network layout.
-    TString layoutString = "Layout=TANH|100,TANH|50,TANH|10,LINEAR";
+    TString layoutString = "Layout=RELU|100,RELU|50,RELU|10,LINEAR";
 
     // Training strategy.
     TString trainingString1 = "TrainingStrategy="
