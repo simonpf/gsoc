@@ -1,0 +1,95 @@
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usetikzlibrary{matrix,arrows,calc,fadings,decorations.pathreplacing,positioning}
+%% helper macros
+
+\newcommand\pgfmathsinandcos[3]{%
+  \pgfmathsetmacro#1{sin(#3)}%
+  \pgfmathsetmacro#2{cos(#3)}%
+}
+\newcommand\LongitudePlane[3][current plane]{%
+  \pgfmathsinandcos\sinEl\cosEl{#2} % elevation
+  \pgfmathsinandcos\sint\cost{#3} % azimuth
+  \tikzset{#1/.style={cm={\cost,\sint*\sinEl,0,\cosEl,(0,0)}}}
+}
+\newcommand\LatitudePlane[3][current plane]{%
+  \pgfmathsinandcos\sinEl\cosEl{#2} % elevation
+  \pgfmathsinandcos\sint\cost{#3} % latitude
+  \pgfmathsetmacro\yshift{\cosEl*\sint}
+  \tikzset{#1/.style={cm={\cost,0,0,\cost*\sinEl,(0,\yshift)}}} %
+}
+\newcommand\DrawLongitudeCircle[2][1]{
+  \LongitudePlane{\angEl}{#2}
+  \tikzset{current plane/.prefix style={scale=#1}}
+   % angle of "visibility"
+  \pgfmathsetmacro\angVis{atan(sin(#2)*cos(\angEl)/sin(\angEl))} %
+  \draw[current plane] (\angVis:1) arc (\angVis:\angVis+180:1);
+%  \draw[current plane,dashed] (\angVis-180:1) arc (\angVis-180:\angVis:1);
+}
+\newcommand\DrawLatitudeCircle[2][1]{
+  \LatitudePlane{\angEl}{#2}
+  \tikzset{current plane/.prefix style={scale=#1}}
+  \pgfmathsetmacro\sinVis{sin(#2)/cos(#2)*sin(\angEl)/cos(\angEl)}
+  % angle of "visibility"
+  \pgfmathsetmacro\angVis{asin(min(1,max(\sinVis,-1)))}
+  \draw[current plane] (\angVis:1) arc (\angVis:-\angVis-180:1);
+%  \draw[current plane,dashed] (180-\angVis:1) arc (180-\angVis:\angVis:1);
+}
+
+\definecolor{spec1}{rgb}{0.0,0.0,1.0}
+\definecolor{spec2}{rgb}{0.2,0.0,0.8}
+\definecolor{spec3}{rgb}{0.4,0.0,0.6}
+\definecolor{spec4}{rgb}{0.6,0.0,0.4}
+\definecolor{spec5}{rgb}{0.8,0.0,0.2}
+\definecolor{spec6}{rgb}{1.0,0.0,0.0}
+\definecolor{spec7}{rgb}{1.0,0.0,0.0}
+%% document-wide tikz options and styles
+
+\tikzset{%
+  >=latex, % option for nice arrows
+  inner sep=0pt,%
+  outer sep=2pt,%
+  mark coordinate/.style={inner sep=0pt,outer sep=0pt,minimum size=3pt,
+    fill=black,circle}%
+}
+
+\newcommand\DrawSatellite[5]{
+  \begin{scope}[rotate around = {#1 + 35:(#1:#2)}, shift={(-#3/2, -#3/2)}]
+    \draw[fill=#4, draw=#4]%
+    (#1:#2) -- ++ (0,#3) -- ++ (#3,0) -- ++ (0,-#3) -- ++ (-#3,0);
+  \end{scope}
+  \begin{scope}[rotate around = {#1 + 35 + #5:(#1:#2)}, shift={(0, #3)}]
+    \draw[draw=#4] (#1:#2) -- ++ (0, 20);
+  \end{scope}
+}
+
+\newcommand\DrawSat[5]{
+  \begin{scope}[rotate around = {#1 + 35:(#1:#2)}, shift={(-#3/2, -#3/2)}]
+    \draw[fill=#4, draw=#4]%
+    (#1:#2) -- ++ (0,#3) -- ++ (#3,0) -- ++ (0,-#3) -- ++ (-#3,0);
+  \end{scope}
+}
+
+\newcommand{\drawsector}[6][]{
+    \draw[#1] (#4:{#2-.5*#3}) arc [start angle = #4, delta angle=-#5, radius={#2-.5*#3}]--++({#4-#5}:#3) arc [start angle = {#4- #5}, delta angle=#5, radius={#2+.5*#3}] --cycle;
+
+}
+
+\newcommand\gauss[2]{1/(#2*sqrt(2*pi))*exp(-((x-#1)^2)/(2*#2^2))}
+\newcommand\scauss[3]{#3/(#2*sqrt(2*pi))*exp(-((x-#1)^2)/(2*#2^2))}
+
+\newcommand\Orbit[1]{
+  \draw[dashed](0,0) circle (#1);
+}
+
+\pgfplotsset{
+  /pgfplots/xlabel near ticks/.style={
+     /pgfplots/every axis x label/.style={
+        at={(ticklabel cs:0.5)},anchor=near ticklabel
+     }
+  },
+  /pgfplots/ylabel near ticks/.style={
+     /pgfplots/every axis y label/.style={
+        at={(ticklabel cs:0.5)},rotate=90,anchor=near ticklabel}
+     }
+  }

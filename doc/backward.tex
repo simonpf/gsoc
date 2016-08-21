@@ -1,105 +1,157 @@
 %%% Local Variables:
 %%% mode: latex
-%%% TeX-master: t
 %%% End:
+
 \begin{tikzpicture}[>=latex]
+\clip (-3,-6) rectangle (14,4);
 % les matrices
-% \matrix (X) [matrix of math nodes,%
-%              left delimiter  = {[},%
-%              right delimiter = {]}] at (0, -1)
-% {%
-%   x_{0,0} & \ldots & x_{0,m}  \\
-%   x_{1,0} & \ldots & x_{1,m}  \\
-%    \vdots &        & \vdots   \\
-%   x_{n,0} & \ldots & x_{n,m}  \\
-% };
+\matrix (X) [matrix of math nodes,%
+             left delimiter  = {[},%
+             right delimiter = {]}] at (0, -1)
+{%
+  x_{0,0} & \ldots & x_{0,m}  \\
+  x_{1,0} & \ldots & x_{1,m}  \\
+   \vdots &        & \vdots   \\
+  x_{n,0} & \ldots & x_{n,m}  \\
+};
 
 %l1
+  \tikzstyle{mat}=[draw=black!20 , line width = 1pt, minimum size = 30pt];
+
+%
+% l1
+%
+
+\draw node at (4,2.5) {\color{white} $\mathbf{U}_1 = f_1 \left (\mathbf{X}\mathbf{W}^T_1 + \boldsymbol{\theta}_1 \right )$};
 \draw[fill=black!20, draw=none] (3,2) rectangle (5,-4) {};
-\draw node[fill=blue!50, circle] (l1) at (4, 1) {$\frac{dJ}{du^{1}_{i,j}$};
-\draw node[fill=green!50, circle] (W1) at (4, -1) {$\frac{dJ}{dW^{1}_{i,j}}$};
-\draw node[fill=green!50, circle] (t1) at (4, -2.5) {$\frac{dJ}{d\theta^{1}_{i}}$};
+\draw node[fill=blue!30, circle, mat] (du1) at (4.3, 0.5) {$\frac{dJ_\mathcal{X}}{d\mathbf{U}_1}$};
+\draw node[fill=blue!50, circle, mat] (u1) at (3.8, 1) {$\mathbf{U}_1$};
+\draw node[fill=orange!50, circle, mat] (dw1) at (4.3, -1.5) {$\frac{dJ_\mathcal{X}}{d\mathbf{W}_1}$};
+\draw node[fill=orange!70, circle, mat] (w1) at (3.8, -1) {$\mathbf{W}_1$};
+\draw node[fill=orange!50, circle, mat] (dt1) at (4.3, -3) {$\frac{dJ_\mathcal{X}}{d\boldsymbol{\theta}_1}$};
+\draw node[fill=orange!70, circle, mat] (t1) at (3.8, -2.5) {$\boldsymbol{\theta}_1$};
+
+%
+% l2
+%
+
+\draw[fill=black!20, draw=none] (7,2) rectangle (9,-4) {};
+\draw node[fill=blue!30, circle, mat] (du2) at (8.3, 0.5) {$\frac{dJ_\mathcal{X}}{d\mathbf{U}_2}$};
+\draw node[fill=blue!50, circle, mat] (u2) at (7.8, 1) {$\mathbf{U}_2$};
+\draw node[fill=orange!40, circle, mat] (dw2) at (8.3, -1.5) {$\frac{dJ_\mathcal{X}}{d\mathbf{W}_2}$};
+\draw node[fill=orange!60, circle, mat] (w2) at (7.8, -1) {$\mathbf{W}_2$};
+\draw node[fill=orange!40, circle, mat] (dt2) at (8.3, -3) {$\frac{dJ_\mathcal{X}}{d\boldsymbol{\theta}_2}$};
+\draw node[fill=orange!60, circle, mat] (t2) at (7.8, -2.5) {$\boldsymbol{\theta}_2$};
+
+%
+% l3
+%
+
+% \draw[fill=black!20, draw=none] (12,2) rectangle (14,-4) {};
+% \draw node[fill=blue!30, circle, mat] (un) at (13.3, 0.5) {$\mathbf{U}_n$};
+% \draw node[fill=blue!50, circle, mat] (dun) at (12.8, 1) {$\frac{dJ}{d\mathbf{U}_n}$};
+% \draw node[fill=orange!50, circle, mat] (wn) at (13.3, -1.5) {$\mathbf{W}_n$};
+% \draw node[fill=orange!50, circle, mat] (dwn) at (12.8, -1) {$\frac{dJ}{d\mathbf{W}_n}$};
+% \draw node[fill=orange!50, circle, mat] (tn) at (13.3, -3) {$\frac{dJ}{d\boldsymbol{\theta}_n}$};
+% \draw node[fill=orange!50, circle, mat] (dtn) at (12.8, -2.5) {$\boldsymbol{\theta}_n}$};
+% \draw [->,thick]%
+% ([xshift=0.4cm]X.north east) to%
+% ([xshift=-0.2cm]u1.south west);
+
+% \draw [->,thick, out=110, in=250]%
+% ([yshift=0.1cm]w1.north west) to%
+% node[yshift = 0.2cm, above]{}%
+% ([yshift=-0.1cm]u1.south west);
+
+% \draw [->, thick, out=130, in=250]%
+% ([xshift=-0.1cm]t1.north west) to%
+% node[yshift = 0.2cm, above]{}%
+% ([xshift=-0.1cm]u1.south west);
+
+
+\draw node at (4,2.5) {$\mathbf{U}_1 = f_1 \left (\mathbf{X} \mathbf{W}^T_1 + \boldsymbol{\theta}_1 \right )$};
 
 % \draw [->,thick]%
-% ([xshift=0.4cm]X. east) to%
-% ([xshift=-0.2cm]l1.south west);
+% ([xshift=0.4cm]u1.east) to%
+% ([xshift=-0.2cm]u2.west);
 
-\draw [->,thick]%
-([yshift=-0.1cm]l1.south) to%
-node[yshift = 0.2cm, above]{}%
-([yshift=0.1cm]W1.north);
+% \draw [->,thick, out=110, in=250]%
+% ([yshift=0.1cm]w2.north west) to%
+% node[yshift = 0.2cm, above]{}%
+% ([yshift=-0.1cm]u2.south west);
 
-\draw [->, thick, out=225, in=135]%
-([yshift=-0.1cm]l1.south west) to%
-node[yshift = 0.2cm, above]{}%
-([yshift=0.1cm]t1.north west);
+% \draw [->, thick, out=130, in=250]%
+% ([xshift=-0.1cm]t2.north west) to%
+% node[yshift = 0.2cm, above]{}%
+% ([xshift=-0.1cm]u2.south west);
 
 
-%l2
-\draw[fill=black!20, draw=none] (7,2) rectangle (9,-4) {};
-\draw node[fill=blue!50, circle] (l2) at (8, 1) {$\frac{dJ}{du^{2}_{i,j}}$};
-\draw node[fill=green!50, circle] (W2) at (8, -1) {$\frac{dJ}{dW^{2}_{i,j}}$};
-\draw node[fill=green!50, circle] (t2) at (8, -2.5) {$\frac{dJ}{d\theta^{2}_{i}}$};
+\draw node at (8,2.5) {$\mathbf{U}_2 = f_2 \left (\mathbf{U_1} \mathbf{W}^T_2 + \boldsymbol{\theta}_2 \right )$};
+% %l2
+% \draw[fill=black!20, draw=none] (7,2) rectangle (9,-4) {};
+% \draw node[fill=blue!50, circle] (l2) at (8, 1) {$\frac{dJ}{du^{2}_{i,j}}$};
+% \draw node[fill=green!50, circle] (W2) at (8, -1) {$\frac{dJ}{dW^{2}_{i,j}}$};
+% \draw node[fill=green!50, circle] (t2) at (8, -2.5) {$\frac{dJ}{d\theta^{2}_{i}}$};
 
-\draw [->,thick]%
-([xshift=-0.2cm]l2.west) to
-([xshift=+0.2cm]l1. east);
+% \draw [->,thick]%
+% ([xshift=-0.2cm]l2.west) to
+% ([xshift=+0.2cm]l1. east);
 
-\draw [->,thick]%
-([yshift=0.-0.1cm]l2.south) to
-node[yshift = 0.2cm, above]{}%
-([yshift=0.1cm]W2.north);
+% \draw [->,thick]%
+% ([yshift=0.-0.1cm]l2.south) to
+% node[yshift = 0.2cm, above]{}%
+% ([yshift=0.1cm]W2.north);
 
-\draw [->, thick, out=225, in=135]%
-([yshift=-0.1cm]l2.south west) to
-([yshift=+0.1cm]t2.north west);
+% \draw [->, thick, out=225, in=135]%
+% ([yshift=-0.1cm]l2.south west) to
+% ([yshift=+0.1cm]t2.north west);
 
 %ld
-\draw node[draw=none] (ld) at (10.5, 1) {$\ldots$};
-\draw [->,thick]%
-([xshift=-0.2cm]ld.west) to
-([xshift=0.2cm]l2.east);
+%\draw node[draw=none] (ld) at (10.5, 1) {$\ldots$}; % \draw [->,thick]%
+% ([xshift=-0.2cm]ld.west) to
+% ([xshift=0.2cm]l2.east);
 
 %lnh
 %\draw node at (13,-5) {$u^{n_h}_{i,j} = f^1 \left (W^{n_h}_{j,k}u^{n_h}_{i,k} + \theta^{n_h}_j \right )$};
 %\draw node at (13,-5) {$\frac{dJ}{du^{n_h}_{i,j}} = f^1 \left (W^{n_h}_{j,k}u^{n_h}_{i,k} + \theta^{n_h}_j \right )$};
-\draw node at (14,-6.05) {%
+\draw node at (9,-5.05) {
 $\begin{aligned}
-  \frac{dJ}{du^{n_h}_{i,j}} &\\
-  \frac{dJ}{dW^{n_h}_{i,j}} & = u^{n_h-1}_{m,j} \left ( f^{n_h} \right )'_{m,i}\frac{dJ}{du^{n_h}_{m,i}} \\
-\frac{dJ}{d\theta^{n_h}_{i}} & = \left (f^{n_h} \right )'_{m,i} \frac{dJ}{du^{n_h}_{m,i}} \\
+% \frac{dJ_\mathcal{X}}{d\mathbf{W}_2} & =  \left (\mathbf{f}'_2 \odot \frac{dJ_\mathcal{X}}{d\mathbf{U}_2}\right )^T \mathbf{U}_{2}\\
+%\frac{dJ_\mathcal{X}}{d\boldsymbol{\theta}_{2}} & =  \left (\mathbf{f}'_2 \odot \frac{dJ_\mathcal{X}}{d\mathbf{U}_2} \right)^T\mathbf{1}
 \end{aligned}$};
 
-\draw[fill=black!20, draw=none] (12,2) rectangle (14,-4) {};
-\draw node[fill=blue!50, circle] (lnh) at (13, 1) {$\frac{dJ}{du^{n_h}_{i,j}}$};
-\draw node[fill=green!50, circle] (Wnh) at (13, -1) {$\frac{dJ}{dW^{n_h}_{j,j}}$};
-\draw node[fill=green!50, circle] (tnh) at (13, -2.5) {$\frac{dJ}{d\theta^{n_h}_{j}}$};
 
-\draw node at (9,-6) {%
+% \draw node at (9,-6) {%
+% $\begin{aligned}
+%   \frac{dJ}{du^{2}_{i,j}} & = W^{3}_{j,k} \left ( f^{3} \right )'_{i,k}\frac{dJ}{du^{3}_{i,n}} \\
+%   \frac{dJ}{dW^{2}_{i,j}} & = u^{1}_{m,k} \left ( f^{2} \right )'_{m,i}\frac{dJ}{du^{2}_{m,i}} \\
+% \frac{dJ}{d\theta^{2}_{i}} & = \left (f^{2} \right )'_{m,i} \frac{dJ}{du^{2}_{m,i}} \\
+% \end{aligned}$};
+
+\draw node at (3,-5) {%
 $\begin{aligned}
-  \frac{dJ}{du^{2}_{i,j}} & = W^{3}_{j,k} \left ( f^{3} \right )'_{i,k}\frac{dJ}{du^{3}_{i,n}} \\
-  \frac{dJ}{dW^{2}_{i,j}} & = u^{1}_{m,k} \left ( f^{2} \right )'_{m,i}\frac{dJ}{du^{2}_{m,i}} \\
-\frac{dJ}{d\theta^{2}_{i}} & = \left (f^{2} \right )'_{m,i} \frac{dJ}{du^{2}_{m,i}} \\
-\end{aligned}$};
+%  \frac{dJ_\mathcal{X}}{d\mathbf{U}_1} & =  \left (\mathbf{f}'_2 \odot \frac{dJ_\mathcal{X}}{d\mathbf{U}_2}\right )^T \mathbf{W}_{2}\\
+%   \frac{dJ_\mathcal{X}}{d\mathbf{W}_1} & = \left ( \mathbf{f}'_1 \odot \frac{dJ_\mathcal{X}}{d\mathbf{U}_1} \right )^T \mathbf{X} \\
+  \frac{dJ_\mathcal{X}}{d\boldsymbol{\theta}_1} & = \left ( \mathbf{f}'_1 \odot \frac{dJ_\mathcal{X}}{d\mathbf{U}_1} \right )^T \mathbf{1} \\
+\end{aligned} $};
+% \draw node at (3,-6) {%
+% $\begin{aligned}
+%   \frac{dJ}{du^{1}_{i,j}} & = W^{2}_{n,j} \left ( f^{2} \right )'_{i,n}\frac{dJ}{du^{2}_{i,n}}\\
+%   \frac{dJ}{dW^{1}_{i,j}} & = x_{m,j} \left ( f^{1} \right )'_{m,i}\frac{dJ}{du^{1}_{m,i}} \\
+% \frac{dJ}{d\theta^{1}_{i}} & = \left (f^{1} \right )'_{m,i} \frac{dJ}{du^{1}_{m,i}} \\
+% \end{aligned}$};
 
-\draw node at (3,-6) {%
-$\begin{aligned}
-  \frac{dJ}{du^{1}_{i,j}} & = W^{2}_{n,j} \left ( f^{2} \right )'_{i,n}\frac{dJ}{du^{2}_{i,n}}\\
-  \frac{dJ}{dW^{1}_{i,j}} & = x_{m,j} \left ( f^{1} \right )'_{m,i}\frac{dJ}{du^{1}_{m,i}} \\
-\frac{dJ}{d\theta^{1}_{i}} & = \left (f^{1} \right )'_{m,i} \frac{dJ}{du^{1}_{m,i}} \\
-\end{aligned}$};
+% \draw [->,thick]%
+% ([xshift=-0.2cm]lnh.west) to
+% ([xshift=0.2cm]ld.east);
 
-\draw [->,thick]%
-([xshift=-0.2cm]lnh.west) to
-([xshift=0.2cm]ld.east);
+% \draw [->,thick]%
+% ([yshift=-0.1cm]lnh.south) to
+% ([yshift=0.1cm]Wnh.north);
 
-\draw [->,thick]%
-([yshift=-0.1cm]lnh.south) to
-([yshift=0.1cm]Wnh.north);
-
-\draw [->, thick, out=225, in=135]%
-([yshift=-0.1cm]lnh.south west) to
-(tnh.north west);
+% \draw [->, thick, out=225, in=135]%
+% ([yshift=-0.1cm]lnh.south west) to
+% (tnh.north west);
 
 % \draw [->, thick]%
 % ([xshift=0.2cm]lnh.south east) to%
@@ -115,14 +167,50 @@ $\begin{aligned}
 % y_{n} \\
 % };
 
-\draw node[fill=red!50, circle] (J) at (17, -1) {$J(\mathbf{y},\mathbf{\hat{y}})$};
+  \draw node[fill=none, draw=none] (J) at (11, -0.5) {$J_\mathcal{X}(\mathbf{y},\mathbf{\hat{y}})$};
+% \draw node[fill=none, draw=none] (dJ) at (11, -1.5) {$\frac{dJ_mathcal{X}(\mathbf{y},\mathbf{\hat{y}})}{\mathbf{U}_2}$};
 % Error function
 
-\draw [->, thick]%
-([xshift=-0.2cm]J.north west) to%
-([xshift=+0.2cm]lnh.south east);
+% \draw [->, thick, out=20, in=110]%
+% ([xshift=+0.1cm]u2.north east) to%
+% ([xshift=+0.2cm]J.north west);
+% \draw [->, thick, out=180, in= 320]
+% ([xshift=-0.1cm]J.west) to
+% ([xshift=+0.1cm]du2.south east);
 
+% \draw [->, thick, out=315, in= 45]%
+% ([xshift=+0.1cm]du2.south east) to%
+% ([xshift=+0.1cm]dw2.north east);
+% \draw [->, thick, out=300, in= 180]%
+% ([xshift=+0.1cm]u1.south east) to%
+% ([xshift=-0.1cm]dw2.west);
 
+% \draw [->, thick, out=315, in= 45]%
+% ([xshift=+0.1cm]du2.south east) to%
+% ([xshift=+0.1cm]dt2.north east);
+
+% \draw [->, thick, out=220, in= 320]%
+% ([xshift=-0.1cm]du2.south west) to%
+% ([xshift=+0.1cm]du1.south east);
+
+% \draw [->, thick, out=180, in= 300]%
+% ([xshift=-0.1cm]dw2.west) to%
+% ([xshift=+0.1cm]du1.south);
+
+% \draw [->, thick, out=300, in= 180]%
+% ([xshift=+0.1cm]u1.south east) to%
+% ([xshift=-0.1cm]dw2.west);
+
+% \draw [->, thick, out=315, in= 45]
+% ([xshift=+0.1cm]du1.south east) to
+% ([xshift=+0.1cm]dw1.north east);
+% \draw [->, thick, out=300, in= 210]
+% ([xshift=+0.1cm]X.south east) to
+% ([xshift=-0.1cm]dw1.south west);
+
+\draw [->, thick, out=315, in= 45]
+([xshift=+0.1cm]du1.south east) to
+([xshift=+0.1cm]dt1.north east);
 % \draw [->,thick, out=35,in=145,looseness=0.75]%
 % ([xshift=0.2cm, yshift=0.4cm]l1.north east) to%
 % node[yshift = 0.2cm, above]{$u^{1}_{i,j} = f^0\left(W^0_{i,k}u^0_{i,k} + \theta^{n_h-1}_i\right)$}%

@@ -735,3 +735,62 @@ In order to obtain a realistic analysis of the performance of the different
 implementations, we also define a general profiling interface for the methods
 in the backend. This will, in addition to architecture specific profiling,
 provide a convenient way of comparing the different backends.
+
+## Floating point operations
+
+In order to assess the performance of the implementation, it is helpful to
+compare the numerical throughput to the theoretical peak performance of the
+corresponding computing architecture. For the computation of the throughput
+the number of floating point operations required for forward and backward
+propagation through the network are required.
+
+### Forward Propagation
+
+Consider a layer with $n^l$ neurons and a batch size $n_b$. For the forward
+propagation of the input activations $\mathbf{u}^{l-1}$ through this layer
+the following operations have to be performed:
+
+- Multiplication of the input activations with the transposed weight matrix
+  $\mathbf{W}^l$
+- Row-wise addition of the bias vector $\mathbf{\theta}^{l}$
+- Application of the activation function
+
+The matrix multiplication requires $n^l n_b (2 n^{l-1} - 1) \: FLOPs$. The
+row-wise addition of the bias terms requires $n^l n_b \: FLOPs$. The arithmetic
+intensity of the application function depends of course on the activation function.
+In general the number of $FLOPs$ will be given by
+
+\begin{align}
+    n^l n_b n_f
+\end{align}
+
+for $n_f$ being the number of flops required for a single evaluation. Here the
+following estimates for $n_f$ will be used:
+
+| Operation  |  CPU  |  GPU  |
+|:----------:|:-----:|:-----:|
+| Add/Sub/Mul|   1   |  1    |
+| Division   |   5   |  1    |
+| Exp        |  10   |  1    |
+| TanH       |  20   |  1    |
+
+
+| Acitvation Function  |  CPU  |  GPU  |
+|:--------------------:|:-----:|:-----:|
+| Identity             |   0   |   0   |
+| Relu                 |   1   |   1   |
+| Sigmoid              |  17   |   4   |
+| TanH                 |  20   |   1   |
+| Symmetric Relu       |  1    |   1   |
+| Soft Sign            |  8    |   4   |
+| Gauss                |  12   |   3   |
+
+| Acitvation Function  |  CPU  |  GPU  |
+|:--------------------:|:-----:|:-----:|
+| Identity             |   0   |   0   |
+| Relu                 |   1   |   1   |
+| Sigmoid              |  19   |   6   |
+| TanH                 |  22   |   3   |
+| Symmetric Relu       |  1    |   1   |
+| Soft Sign            |  8    |   4   |
+| Gauss                |  14   |   5   |

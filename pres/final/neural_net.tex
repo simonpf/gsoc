@@ -1,0 +1,176 @@
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:
+\documentclass{standalone}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usepackage{amsmath}
+\usetikzlibrary{matrix,arrows,calc,fadings,decorations.pathreplacing,positioning}
+\begin{document}
+\pagestyle{empty}
+
+\usetikzlibrary{matrix}
+
+\def\layersep{3.5cm}
+\def\layerwidth{0.5cm}
+\def\layerheight{5cm}
+\def\ninputnodes{4}
+\def\nhiddennodes{15}
+
+\begin{tikzpicture}[shorten >=1pt,->,draw=black!50, node distance=\layersep]
+\clip (-5,-8) rectangle (14,2);
+    \tikzstyle{every pin edge}=[<-,shorten <=1pt]
+    \tikzstyle{neuron}=[circle,fill=black!25,minimum size=5pt,inner sep=0pt]
+    \tikzstyle{input neuron}=[neuron,  fill=black];
+    \tikzstyle{output neuron}=[neuron, fill=black];
+    \tikzstyle{hidden neuron}=[neuron, fill=black];
+    \tikzstyle{annot} = [text width=4em, text centered]
+
+    %
+    % Input
+    %
+
+    \foreach \name / \y [evaluate=\ninputnodes as \nnodes using \ninputnodes + 1]
+    in {1,...,\ninputnodes}
+    % This is the same as writing \foreach \name / \y in {1/1,2/2,3/3,4/4}
+        \node[input neuron, pin=left:$x_{\y}$] (I-\name)
+                 at (-\layersep*3/4,-\layerheight/\nnodes*\y) {};
+    \draw [-,decorate,decoration={brace,amplitude=10pt},xshift=-4pt,yshift=2pt]
+     (-1 cm - \layersep * 3 / 4, -4.0) -- (-1 cm - \layersep * 3 / 4,-1.0) node [black,midway,xshift=-0.6cm] {};
+    \node  at (-1.8cm -\layersep * 3 / 4, -2.4) {$\mathbf{x}$};
+
+    %
+    % Hidden 1
+    %
+
+    \draw[fill =black!10, draw = none]
+    ( -\layerwidth , 0) rectangle (\layerwidth, -\layerheight);
+    \foreach \name / \y [evaluate=\nhiddennodes as \nnodes using \nhiddennodes + 1]
+     in {1,...,\nhiddennodes}
+    % This is the same as writing \foreach \name / \y in {1/1,2/2,3/3,4/4}
+        \node[input neuron] (H1-\name)
+                 at (0,-\layerheight/\nnodes*\y) {};
+
+    \foreach \source in {1,...,\ninputnodes}
+        \foreach \dest in {1,...,\nhiddennodes}
+            \path (I-\source) edge[-] (H1-\dest);
+
+
+    % Annotate the layers
+    \node  at (0, - \layerheight - 0.5 cm)
+ {$\mathbf{u}_1 = \color{black} f\left( \color{black}
+                  \mathbf{W}_1 \mathbf{x} + \boldsymbol{\theta}_1
+                  \color{black} \right) \color{black}$};
+
+    %
+    % Hidden 2
+    %
+
+    \draw[fill =black!10, draw = none]
+    ( -\layerwidth + \layersep, 0) rectangle (\layerwidth + \layersep, -\layerheight);
+    \foreach \name / \y [evaluate=\nhiddennodes as \nnodes using \nhiddennodes + 1]
+     in {1,...,\nhiddennodes}
+    % This is the same as writing \foreach \name / \y in {1/1,2/2,3/3,4/4}
+        \node[input neuron] (H2-\name)
+                 at (\layersep,-\layerheight/\nnodes*\y) {};
+
+    \foreach \source in {1,...,\nhiddennodes}
+        \foreach \dest in {1,...,\nhiddennodes}
+            \path (H1-\source) edge[-] (H2-\dest);
+
+
+    % Annotate the layers
+    \node  at (\layersep, - \layerheight - 0.5 cm)
+ {$\mathbf{u}_2 = \color{black} f\left( \color{black}
+                  \mathbf{W}_2 \mathbf{u}_1 + \boldsymbol{\theta}_2
+                  \color{black} \right) \color{black}$};
+
+    %
+    % Hidden 3
+    %
+
+    \draw[fill =black!10, draw = none]
+    ( -\layerwidth + 2*\layersep, 0) rectangle (\layerwidth + 2*\layersep, -\layerheight);
+    \foreach \name / \y [evaluate=\nhiddennodes as \nnodes using \nhiddennodes + 1]
+     in {1,...,\nhiddennodes}
+    % This is the same as writing \foreach \name / \y in {1/1,2/2,3/3,4/4}
+        \node[input neuron] (H3-\name)
+                 at (2*\layersep,-\layerheight/\nnodes*\y) {};
+
+    \foreach \source in {1,...,\nhiddennodes}
+        \foreach \dest in {1,...,\nhiddennodes}
+            \path (H2-\source) edge[-] (H3-\dest);
+
+
+    % Annotate the layers
+    \node  at (2* \layersep, - \layerheight - 0.5 cm)
+ {$\mathbf{u}_3 = \color{black} f\left( \color{black}
+                  \mathbf{W}_3 \mathbf{u}_2 + \boldsymbol{\theta}_3
+                  \color{black} \right) \color{black}$};
+    %
+    % Output
+    %
+
+    \draw[fill =black!10, draw = none]
+    (3 * \layersep -\layerwidth , 0) rectangle (3 * \layersep + \layerwidth, -\layerheight);
+    \node[output neuron,
+          pin={[pin distance = 1cm]right:$\hat{y} $},
+               right of=H3-8] (O) {};
+
+
+    % Connect every node in the hidden layer with the output layer
+    \foreach \source in {1,...,\nhiddennodes}
+        \path (H3-\source) edge[-] (O);
+
+    \node  at (3 * \layersep, - \layerheight - 0.5 cm)
+ {$\mathbf{u}_4 = f\left(\mathbf{W}_4 \mathbf{u}_4 + \boldsymbol{\theta}_4\right)$};
+
+
+\begin{axis}[axis lines = middle, width=2.8cm, height=2.5cm,%
+  at={(0 - 0.6cm , 0.5cm)},
+every axis plot post/.append style={
+ mark=none,domain=-3:3,samples=50,smooth},%
+ticks=none,
+ylabel near ticks,
+xlabel near ticks,
+enlargelimits=upper] % extend the axes a bit to the right and top
+\addplot[-, color=red]{tanh(x)};
+\end{axis}
+
+\begin{axis}[axis lines = middle, width=2.8cm, height=2.5cm,%
+  at={(\layersep - 0.6cm , 0.5cm)},
+every axis plot post/.append style={
+ mark=none,domain=-3:3,samples=50,smooth},%
+ticks=none,
+ylabel near ticks,
+xlabel near ticks,
+enlargelimits=upper] % extend the axes a bit to the right and top
+\addplot[-, color=red]{tanh(x)};
+\end{axis}
+
+\begin{axis}[axis lines = middle, width=2.8cm, height=2.5cm,%
+  at={(2 * \layersep - 0.6cm , 0.5cm)},
+every axis plot post/.append style={
+ mark=none,domain=-3:3,samples=50,smooth},%
+ticks=none,
+ylabel near ticks,
+xlabel near ticks,
+enlargelimits=upper] % extend the axes a bit to the right and top
+\addplot[-, color=red]{tanh(x)};
+\end{axis}
+
+\begin{axis}[axis lines = middle, width=2.8cm, height=2.5cm,%
+  at={(3 * \layersep - 0.6cm , 0.5cm)},
+every axis plot post/.append style={
+ mark=none,domain=-3:3,samples=50,smooth},%
+ticks=none,
+ylabel near ticks,
+xlabel near ticks,
+enlargelimits=upper] % extend the axes a bit to the right and top
+\addplot[-, color=red]{x};
+\end{axis}
+\end{tikzpicture}
+% End of code
+\end{document}
