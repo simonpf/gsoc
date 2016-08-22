@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+    <head>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+
+        <script type="text/x-mathjax-config">
+          MathJax.Hub.Config({"HTML-CSS" : {scale : 75}})
+        </script>
+
+        <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+        <link href="https://fonts.googleapis.com/css?family=Cardo" rel="stylesheet" type="text/css">
+        <title>Google Summer of Code - Project Blog</title>
+        <link rel="stylesheet" type="text/css" href="../css/default.css" />
+        <link rel="stylesheet" type="text/css" href="../css/code.css" />
+        <link href="https://fonts.googleapis.com/css?family=Open+Sans:300" rel="stylesheet" type="text/css">
+    </head>
+    <body>
+        <div id="header">
+            <div id="logo">
+                <a>Google Summer of Code</a>
+            </div>
+            <div id="subtitle">
+                <a href="../">Project Blog</a>
+            </div>
+        </div>
+
+        <div id="navbar">
+            <div id="navigation">
+                <a href="../">Home</a>
+                <a href="../about.html">About</a>
+                <a href="../contact.html">Contact</a>
+                <a href="../final.html">Final Submission</a>
+            </div>
+        </div>
+
+        <div id="content">
+
+          <div id="title"><h1>Performance Analysis</h1></div>
+            <div class="info">
+    Posted on August 11, 2016
+    
+</div>
+
+<p>The ability to train models <em>efficiently</em> on <em>very large</em> sets of data is a crucial aspect of deep learning techniques. Since the <a href="https://de.wikipedia.org/wiki/Backpropagationtraining">backprop</a> algorithm used for the training of neural networks exposes a high degree of parallelism it can be efficiently implemented on modern, massively parallel accelarator devices such as <a href="https://de.wikipedia.org/wiki/General_Purpose_Computation_on_Graphics_Processing_Unit">general pupose graphics processing units</a>. The aim of this project was to make the computational power of those devices accessible to physicists using the Root data anlysis frame. Therfore, a thorough analysis of the performance of the developed code is essential in order to identify performance deficits and finally ensure that deep neural networks can be trained efficiently with this implementation.</p>
+<h1 id="performance-model">Performance Model</h1>
+<p>Since measuring the execution time alone does not provide much useful information about the <em>efficiency</em> of the code, the following simple performance model is used to assess the performance of the code.</p>
+<p>The largest part of the time required for the training is spent forward and backward propagating the mini-batches through the network. Consider a layer <span class="math inline">\(l\)</span> with <span class="math inline">\(n_l\)</span> nerons, a batch size of <span class="math inline">\(b_n\)</span>. For simplicity weight decay and dropout will be ignored in the following.</p>
+<h2 id="foward-propagation">Foward Propagation</h2>
+<p>For the forward propagation through the layer the following operations must be performed:</p>
+<ul>
+<li>Multiplication of the input matrix with the transpose of the weight matrix <span class="math inline">\(\mathbf{W}^l\)</span> of the current layer.</li>
+<li>Addition of the bias terms to each row of the resulting matrix</li>
+<li>Application of the activation function and evaluation of its derivatives</li>
+</ul>
+<p>A common measure for the computational complexity of those operations are the number of floating point oprations (FLOPs) required for their execution. For the matrix multiplication and the addition of the bias terms, these are straight forward to derive. The application of the the activation function is harder to quantify using FLOPs not only because it depends on the function but also because the equivalent number of FLOPs depends on the underlyin hardware. However, as will be seen below, their contribution to the overall numerical complexity is low and the application of the activation function will therfore be counted as a single flop. The number of floating pointer operations for the forward propagation through a given layer is summarized in the table below.</p>
+<table>
+<caption><strong>Table 1</strong>: Estimated number of floating point operations for forward propagation.</caption>
+<thead>
+<tr class="header">
+<th>Operation</th>
+<th align="center">FLOPs</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Matrix Multiplication</td>
+<td align="center"><span class="math inline">\(n_b n_l (2n_{l-1} - 1)\)</span></td>
+</tr>
+<tr class="even">
+<td>Addition of Bias Terms</td>
+<td align="center"><span class="math inline">\(n_b n_l\)</span></td>
+</tr>
+<tr class="odd">
+<td>Activation Function Application</td>
+<td align="center"><span class="math inline">\(n_b n_l\)</span></td>
+</tr>
+<tr class="even">
+<td>Activation Function Derivatives</td>
+<td align="center"><span class="math inline">\(n_b n_l\)</span></td>
+</tr>
+</tbody>
+</table>
+<h2 id="backward-propagation">Backward Propagation</h2>
+<p>For the backward propagation of the gradients through a layer and the computation of the weight and bias gradients the following operations are required:</p>
+<ul>
+<li>Computation of the Hadamard product of the activation gradients with the derivatives of the activation function.</li>
+<li>Multiplication of the resulting matrix with the weight matrix to obtain the activation gradients of the previous layer.</li>
+<li>Multiplication of the hadamard product with the activation to obtain the weight gradients.</li>
+<li>Summation over the columns of the hadamard product matrix to obtain the bias gradients.</li>
+</ul>
+<p>The required floating point operation are given in the table below:</p>
+<table>
+<caption><strong>Table 2</strong>: Estimated number of floating point operations for backward propagation.</caption>
+<thead>
+<tr class="header">
+<th>Operation</th>
+<th align="center">FLOPs</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td>Hadamard Product</td>
+<td align="center"><span class="math inline">\(n_b n_l\)</span></td>
+</tr>
+<tr class="even">
+<td>Matrix Multiplication</td>
+<td align="center"><span class="math inline">\(n_l n_{l-1} (2 n_b\)</span> - 1)</td>
+</tr>
+<tr class="odd">
+<td>Summation of Columns</td>
+<td align="center">$n_l (n_b - 1) $</td>
+</tr>
+</tbody>
+</table>
+<p>Using the formulas in the two tables above the computational throughput in floating point operations per second FLOPS = FLOPs / s.</p>
+
+        </div>
+        <div id="footer">
+            Site proudly generated by
+            <a href="http://jaspervdj.be/hakyll">Hakyll</a>
+        </div>
+    </body>
+</html>
