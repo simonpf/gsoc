@@ -42,10 +42,10 @@
     
 </div>
 
-<p>The ability to train models <em>efficiently</em> on <em>very large</em> sets of data is a crucial aspect of deep learning techniques. Since the <a href="https://de.wikipedia.org/wiki/Backpropagationtraining">backprop</a> algorithm used for the training of neural networks exposes a high degree of parallelism it can be efficiently implemented on modern, massively parallel accelarator devices such as <a href="https://de.wikipedia.org/wiki/General_Purpose_Computation_on_Graphics_Processing_Unit">general pupose graphics processing units</a>. The aim of this project was to make the computational power of those devices accessible to physicists using the Root data anlysis frame. Therfore, a thorough analysis of the performance of the developed code is essential in order to identify performance deficits and finally ensure that deep neural networks can be trained efficiently with this implementation.</p>
+<p>The ability to train models <em>efficiently</em> on <em>very large</em> sets of data is a crucial aspect of deep learning techniques. Since the <a href="https://de.wikipedia.org/wiki/Backpropagationtraining">backprop</a> algorithm used for the training of neural networks exposes a high degree of parallelism it can be efficiently implemented on modern, massively parallel accelarator devices such as <a href="https://de.wikipedia.org/wiki/General_Purpose_Computation_on_Graphics_Processing_Unit">general pupose graphics processing units</a>. The aim of this project was to make the computational power of those devices accessible to physicists using the Root data anlysis framework. Therfore, a thorough analysis of the performance of the developed code is essential in order to identify performance deficits and finally ensure that deep neural networks can be trained efficiently with this implementation.</p>
 <h1 id="performance-model">Performance Model</h1>
-<p>Since measuring the execution time alone does not provide much useful information about the <em>efficiency</em> of the code, the following simple performance model is used to assess the performance of the code.</p>
-<p>The largest part of the time required for the training is spent forward and backward propagating the mini-batches through the network. Consider a layer <span class="math inline">\(l\)</span> with <span class="math inline">\(n_l\)</span> nerons, a batch size of <span class="math inline">\(b_n\)</span>. For simplicity weight decay and dropout will be ignored in the following.</p>
+<p>Since measuring the execution time alone does not provide much useful information about the <em>efficiency</em> of the code, the following simple performance model is used to assess the performance of the implementation.</p>
+<p>The largest part of the time required for the training is spent forward and backward propagating the mini-batches through the network. Consider a layer <span class="math inline">\(l\)</span> with <span class="math inline">\(n_l\)</span> neurons, a batch size of <span class="math inline">\(b_n\)</span>. For simplicity weight decay and dropout will be ignored in the following.</p>
 <h2 id="foward-propagation">Foward Propagation</h2>
 <p>For the forward propagation through the layer the following operations must be performed:</p>
 <ul>
@@ -53,7 +53,7 @@
 <li>Addition of the bias terms to each row of the resulting matrix</li>
 <li>Application of the activation function and evaluation of its derivatives</li>
 </ul>
-<p>A common measure for the computational complexity of those operations are the number of floating point oprations (FLOPs) required for their execution. For the matrix multiplication and the addition of the bias terms, these are straight forward to derive. The application of the the activation function is harder to quantify using FLOPs not only because it depends on the function but also because the equivalent number of FLOPs depends on the underlyin hardware. However, as will be seen below, their contribution to the overall numerical complexity is low and the application of the activation function will therfore be counted as a single flop. The number of floating pointer operations for the forward propagation through a given layer is summarized in the table below.</p>
+<p>A common measure for the computational complexity of numerical comupations are the number of floating point oprations (FLOPs) required for their execution. For the matrix multiplication and the addition of the bias terms, these are straight forward to derive. The application of the the activation function is harder to quantify using FLOPs not only because it depends on the function but also because the equivalent number of FLOPs depends on the underlying hardware. However, as will be seen below, their contribution to the overall numerical complexity is low and the application of the activation function will therfore be counted as a single flop. The number of floating point operations for the forward propagation through a given layer is summarized in the table below.</p>
 <table>
 <caption><strong>Table 1</strong>: Estimated number of floating point operations for forward propagation.</caption>
 <thead>
@@ -105,15 +105,90 @@
 </tr>
 <tr class="even">
 <td>Matrix Multiplication</td>
-<td align="center"><span class="math inline">\(n_l n_{l-1} (2 n_b\)</span> - 1)</td>
+<td align="center"><span class="math inline">\(n_l n_{l-1} (2 n_b - 1)\)</span></td>
 </tr>
 <tr class="odd">
 <td>Summation of Columns</td>
-<td align="center">$n_l (n_b - 1) $</td>
+<td align="center"><span class="math inline">\(n_l (n_b - 1)\)</span></td>
 </tr>
 </tbody>
 </table>
-<p>Using the formulas in the two tables above the computational throughput in floating point operations per second FLOPS = FLOPs / s.</p>
+<h2 id="total">Total</h2>
+Using the formulas in the tables above, the computational throughput in floating point operations per second FLOPS = FLOPs / s for an arbitrary network is given by:
+\begin{align}
+ \sum_l 6n_l n_b n_{l-1}  + 4 n_l n_b - n_l(n_{l-1} + 1) - n_bn_{l-1} 
+ \end{align}
+<p>For hidden layers with a large number of neurons <span class="math inline">\(n_l\)</span>, the above sum will be dominated by the terms involving the triple product <span class="math inline">\(n_b n_l n_{l-1}\)</span>. These terms originate from the matrix products that have to be computed during forward and backward propagation. One can thus expect that matrix multiplication is the critical operation for the performance of the neural network implementation.</p>
+<h1 id="the-training-benchmark">The Training Benchmark</h1>
+<p>Using the formula above, the numerical throughput of the deep neural network implementation has been computed on a benchmark training set. The benchmark training set consists of <span class="math inline">\(5 \times 10^5\)</span> samples from a random, linear mapping <span class="math inline">\(f: \mathbb{R}^{20} \to \mathbb{R}\)</span>. The network used for the benchmark had 5 hidden layers, each with <span class="math inline">\(256\)</span> neurons using <span class="math inline">\(tanh\)</span> activation functions.</p>
+<h1 id="cpu-performance">CPU Performance</h1>
+<p>To set a baseline, we begin be examining the performance on a multi-core CPU platform. The benchmarks have been performend on an Intel Xeon E5-2650 with <span class="math inline">\(8 \times 2\)</span> cores. The CPU backend of the neural network implementation uses multi-threaded <a href="http://www.netlib.org/blas/">BLAS</a> for parallel matrix algebra and <a href="https://www.threadingbuildingblocks.org/">TBB</a> to parallelize the remaining operations required for the training. For the benchmarks the <a href="http://www.openblas.net/">OpenBLAS</a> implementation of BLAS was used. The graph below depicts the numerical throughput achieved with respect to the number of threads used for the linear algebra routines. The batch size used was <span class="math inline">\(n_b = 1024\)</span> samples.</p>
+<div class="figure">
+<img src="../images/perf_cpu.png" alt="Figure 1:
+Numerical throughput achieved with the multi-core CPU backend of the newly developed
+deep neural network implementation." style="width: 500px;">
+<p class="caption">
+<strong>Figure 1</strong>: Numerical throughput achieved with the multi-core CPU backend of the newly developed deep neural network implementation.
+</p>
+</div>
+<p>The gray line indicates ideal scaling of the single-core performance for single precision arithmetic. The performance scales acceptably well with the number of cores used for the matrix arithmetic and overall a numerical throughput of about 100 GFlop/s has been obtained using single precision arithmetic and 80 GFlop/s using double precision arithmetic.</p>
+<h1 id="gpu-performance">GPU Performance</h1>
+<p>The benchmarks for the GPU performance have been performed on an Nvidia Tesla K20, which has a single precision peak performance of <span class="math inline">\(3.52\)</span> TFlop/s and a double precision peak performance of <span class="math inline">\(1.17\)</span> TFlop/s.</p>
+<h2 id="cuda-backend">Cuda Backend</h2>
+<p>The graph below shows the numerical throughput achieved using the CUDA backend of the neural network implementation with respect to the batch size used for the training. In addition to the performance of the benchmark network with <span class="math inline">\(256\)</span> neurons (blue), also the performance of networks with <span class="math inline">\(384\)</span> (green) and <span class="math inline">\(512\)</span> (red) neurons in the hidden layers are displayed. Compared to the theoretical peak performance of the device, the performance is relatively low. This can be improved, however, by increasing the complexity of the network. This indicates that for the not so dense layers, insufficient parallelism is available to fill the GPU.</p>
+<div class="figure">
+<img src="../images/perf_gpu_0.png" alt="Figure 2:
+Numerical throughput achieved with the CUDA GPU backend of the newly developed
+deep neural network implementation." style="width: 500px;">
+<p class="caption">
+<strong>Figure 2</strong>: Numerical throughput achieved with the CUDA GPU backend of the newly developed deep neural network implementation using single precision floating point arithmetic.
+</p>
+</div>
+<h3 id="multiple-compute-streams">Multiple Compute Streams</h3>
+<p>Since the results from the straight-forward implementation indicate that insufficient parallelism is available to keep the GPU busy, we investigated if the performance can be improved by exposing more parallelism to the device. To this end, the training was additionally parallelized over batches, meaning that the gradients for multiple batches are computed simultaneously on the device. Using CUDA, this can be conveniently implemented using compute streams. The graph below displays the achieved performance gains using two compute streams. Even though the scaling is not linear, considerables performance gains could be achieved in particular for smaller batch sizes.</p>
+<div class="figure">
+<img src="../images/perf_gpu_1.png" alt="Figure 3:
+Numerical throughput achieved with the CUDA GPU backend using two compute streams (solid) compared to the standard implementation (dashed)." style="width: 500px;">
+<p class="caption">
+<strong>Figure 3</strong>: Numerical throughput achieved with the CUDA GPU backend using two compute streams (solid) compared to the standard implementation (dashed).
+</p>
+</div>
+<h3 id="double-precision">Double Precision</h3>
+<p>Since the implementation is generic with respect to the floating point type used in the calculations, the same benchmarks have been performed once again using double precision arithmetic. The use of double arithmetic of course reduces the numerical throughput, relative to the peak performance of the device, however, the numerical throughput is actually improved.</p>
+<div class="figure">
+<img src="../images/perf_gpu_double.png" alt="Figure 4:
+Numerical throughput achieved with the CUDA GPU backend using double precision arithmetic. Solid lines display the performance achieved using two compute streams, while the dashed lines one show the performance achieved using only one" style="width: 500px;">
+<p class="caption">
+<strong>Figure 4</strong>: Numerical throughput achieved with the CUDA GPU backend using double precision arithmetic. Solid lines display the performance achieved using two compute streams, while the dashed lines one show the performance achieved using only one compute stream.
+</p>
+</div>
+<h3 id="profiling-results">Profiling Results</h3>
+<p>In addition to the overall numerical throughput, also execution profiles were recorded for the CUDA implementation. The fractions of the execution time spent in the different computational routines of the low-level interface are given in the figure below. As predicted by the performance, most of the compute time is consumed by matrix multiplications (GEMM), followed by the application of the activation functions and their derivatives.</p>
+<div class="figure">
+<img src="../images/prof_gpu.png" alt="Figure 5:
+Fraction of the compute time spent in the different sub-routines of the low-level interface." style="width: 500px;">
+<p class="caption">
+<strong>Figure 5</strong>: Fraction of the compute time spent in the different sub-routines of the low-level interface.
+</p>
+</div>
+<h2 id="opencl-backend">OpenCL Backend</h2>
+<p>Finally, also an OpenCL backend for the deep neural network implementation has been developed. This has not yet been integrated into Root master in order to test on additional architectures prior to releasing it. The numerical throughput achieved on the Nvidia Tesla K20 card is displayed in the plot below. The performance is clearly inferior compared to the CUDA implementation, which was somehow expected considering that OpenCL supports a large range of compute architectures.</p>
+<div class="figure">
+<img src="../images/perf_opencl_double.png" alt="Figure 6:
+Computational performance of the OpenCL backend." style="width: 500px;">
+<p class="caption">
+<strong>Figure 6</strong>: Computational performance of the OpenCL backend.
+</p>
+</div>
+<h1 id="summary">Summary</h1>
+<p>In this post the performance results obtained for the different backends have been presented. Compared to the CPU implementation, the CUDA implementation performs significantly better. Unfortunately we were not able to achieve the same performance with the OpenCL implementation. The performance results are summarized in the bar plot below, comparing the performance achieved for a batch size <span class="math inline">\(n_b = 1024\)</span>. The plot also shows the performance that was obtained using the <a href="https://github.com/Lasagne/Lasagne">Lasagne</a> python package, which uses <a href="http://deeplearning.net/software/theano/">Theano</a> for GPU-accelerated matrix arithmetic. The Lasagne-benchmark was also performed on the Nvidia Tesla K20.</p>
+<div class="figure">
+<img src="../images/results.png" alt="Figure 7:
+Numerical throughput achieved with the newly developed neural network implementation." style="width: 500px;">
+<p class="caption">
+<strong>Figure 7</strong>: Numerical throughput achieved with the newly developed neural network implementation.
+</p>
+</div>
 
         </div>
         <div id="footer">
